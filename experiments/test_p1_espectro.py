@@ -8,8 +8,7 @@ from src.pregunta1 import calcular_espectro
 from src.pregunta1 import espectro_log
 
 
-# TODO: cambiar el nombre cuando tenga la imagen del profesor
-RUTA_IMAGEN = Path("images/profesor/pregunta1.png")
+RUTA_IMAGEN = Path("images/profesor/p1/P1.CR2")
 
 CARPETA_SALIDA = Path("results/pregunta1/espectro")
 
@@ -36,6 +35,10 @@ def mostrar_espectro(
         frec_v[0],
     ]
 
+    # la imagen es muy oscura (cielo de noche), por eso
+    # para mostrarla hay que usar como maximo el percentil 99
+    max_mostrar = np.percentile(imagen, 99)
+
     figura, axes = plt.subplots(
         1,
         2,
@@ -46,9 +49,9 @@ def mostrar_espectro(
         imagen,
         cmap="gray",
         vmin=0,
-        vmax=1,
+        vmax=max_mostrar,
     )
-    axes[0].set_title(f"Imagen ruidosa ({alto}x{ancho})")
+    axes[0].set_title(f"Imagen ruidosa ({alto}x{ancho}), vmax = p99")
     axes[0].axis("off")
 
     axes[1].imshow(

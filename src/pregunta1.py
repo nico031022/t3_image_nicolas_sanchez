@@ -1,8 +1,38 @@
 import numpy as np
 import cv2
+import rawpy
+
+
+def cargar_imagen_raw(ruta):
+
+    # abrir el archivo RAW de la camara (.CR2)
+    raw = rawpy.imread(str(ruta))
+
+    mosaico = raw.raw_image_visible.copy()
+
+    # niveles de negro y blanco del sensor
+    niveles_negro = raw.black_level_per_channel
+    nivel_negro = np.mean(niveles_negro)
+    nivel_blanco = raw.white_level
+
+    raw.close()
+
+    # pasar a double antes de operar
+    imagen = mosaico.astype(np.float64)
+
+    # normalizar: el negro queda en 0 y el blanco en 1
+    # no recorto nada: los valores negativos son ruido del sensor
+    # y los pixeles saturados quedan un poco sobre 1
+    imagen = (imagen - nivel_negro) / (nivel_blanco - nivel_negro)
+
+    return imagen
 
 
 def cargar_imagen(ruta):
+
+    if str(ruta).lower().endswith(".cr2"):
+        imagen = cargar_imagen_raw(ruta)
+        return imagen
 
     imagen = cv2.imread(
         str(ruta),
