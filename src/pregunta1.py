@@ -137,5 +137,116 @@ def espectro_log(F):
     return espectro
 
 
+def crear_grilla_frecuencias(
+    alto,
+    ancho,
+):
+
+    # frecuencias en ciclos por pixel, en el mismo orden que el espectro con fftshift
+    frec_v = np.fft.fftshift(np.fft.fftfreq(alto))
+    frec_u = np.fft.fftshift(np.fft.fftfreq(ancho))
+
+    U, V = np.meshgrid(
+        frec_u,
+        frec_v,
+    )
+
+    return U, V
 
 
+def distancia_a_centro(
+    U,
+    V,
+    u0,
+    v0,
+):
+
+    du = np.abs(U - u0)
+    dv = np.abs(V - v0)
+
+    # el espectro es periodico con periodo 1 (ciclos/pixel)
+    # asi un notch en -0.5 tambien tapa lo que esta cerca de +0.5
+    du = np.minimum(du, 1 - du)
+    dv = np.minimum(dv, 1 - dv)
+
+    D = np.sqrt(du**2 + dv**2)
+
+    return D
+
+
+def agregar_simetricos(lista_centros):
+
+    lista_completa = []
+
+    for centro in lista_centros:
+
+        u0 = centro[0]
+        v0 = centro[1]
+
+        lista_completa.append((u0, v0))
+
+        # si cada coordenada es 0 o +-0.5, el simetrico es el mismo punto
+        # (pasa con los picos de Bayer) y no hay que agregarlo dos veces
+        u_especial = (u0 == 0) or (abs(u0) == 0.5)
+        v_especial = (v0 == 0) or (abs(v0) == 0.5)
+
+        if u_especial and v_especial:
+            continue
+
+        lista_completa.append((-u0, -v0))
+
+    return lista_completa
+
+
+def notch_ideal(
+    U,
+    V,
+    lista_centros,
+    radio,
+):
+
+    H = np.ones(U.shape)
+
+    centros = agregar_simetricos(lista_centros)
+
+    for centro in centros:
+
+        D = distancia_a_centro(
+            U,
+            V,
+            centro[0],
+            centro[1],
+        )
+
+        # dentro del radio se elimina todo
+        H[D <= radio] = 0
+
+    return H
+
+
+def notch_gaussiano(
+    U,
+    V,
+    lista_centros,
+    sigma,
+):
+
+    H = np.ones(U.shape)
+
+    centros = agregar_simetricos(lista_centros)
+
+    for centro in centros:
+
+        D = distancia_a_centro(
+            U,
+            V,
+            centro[0],
+            centro[1],
+        )
+
+        # pasa altos gaussiano centrado en el notch (clase 14)
+        H_centro = 1 - np.exp(-D**2 / (2 * sigma**2))
+
+        H = H * H_centro
+
+    return H
