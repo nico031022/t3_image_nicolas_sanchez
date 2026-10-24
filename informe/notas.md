@@ -69,3 +69,23 @@
 - Los pixeles calientes (puntos blancos sueltos) siguen ahí, no son periódicos y el notch no los toca.
 - La diferencia a imagen completa se ve casi gris uniforme porque al achicar la figura la grilla se promedia; hay que mirarla con zoom.
 - Correr el script toma ~20 s y usa ~2.3 GB de memoria (varias matrices de 2856 × 4290).
+
+### Barrido de anchos: métricas (`test_p1_barrido`)
+
+- Anchos: 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.04 (radio en el ideal, σ en el gaussiano). Sin padding.
+- Por qué estos anchos:
+  - Mínimo 0.0005: la resolución en frecuencia es 1/N (clase 11), o sea 1/4290 ≈ 0.00023 en u y 1/2856 ≈ 0.00035 en v. Con un radio menor a ~1 pixel el agujero casi no tapa nada. 0.0005 son ~2 pixeles en u y ~1.4 en v.
+  - Máximo 0.04: los centros están separados al menos 0.25, así que el radio tiene que quedar bien bajo 0.125 para que los agujeros no se junten. Además el agujero en 0.25 con radio 0.04 llega hasta 0.21, lejos de donde está el contenido de la imagen (D < 0.1 en el perfil radial). Es un caso claramente ancho pero todavía razonable.
+  - Entre medio cada valor es ~el doble del anterior (escala logarítmica, valores redondos 1-2-5), porque el efecto del ancho va por factores y no por sumas.
+  - Revisando después: el codo de las curvas (~0.005) quedó al medio del rango y en los extremos se ve "muy angosto, queda ruido" y "muy ancho, se pierde imagen", así que el rango alcanza.
+- Para comparar los dos filtros se usa el radio donde H = 0.5: en el ideal es el radio y en el gaussiano es σ·√(2 ln 2) ≈ 1.18σ.
+- Métricas:
+  - Cielo: desviación estándar de la mediana por columna y por fila (misma zona de cielo de antes). Si queda patrón, estas medianas varían mucho.
+  - Zonas brillantes: 4 recortes de 256 × 256 en la nebulosa, casi sin pixeles saturados, en (1920, 2176), (1536, 1536), (1408, 1792) y (1792, 1408). En cada uno se suma |F| en las 5 frecuencias del ruido y se divide por la mediana del espectro del recorte. Como 256 es múltiplo de 4, ±0.5 y ±0.25 caen justo en un pixel.
+  - std de la diferencia ruidosa − filtrada: cuánto se le saca a la imagen.
+- Resultados:
+  - Cielo: con el ancho más chico ya baja de 0.0088 a ~0.0023 (columnas) y de 0.0084 a ~0.0011 (filas), y después casi no cambia. En el fondo el ruido es muy angosto en frecuencia. Lo que queda es variación propia del cielo. El ideal es un poco peor en el ancho más chico (el círculo tiene muy pocos pixeles).
+  - Zonas brillantes: 449 → ~117 (0.0005) → ~55 (0.001) → ~17 (0.005) y desde ahí queda plano en ~17. En la nebulosa el pico de Bayer es más ancho (el color cambia de un lugar a otro), por eso hace falta un notch más ancho que en el cielo. El piso de ~17 sería contenido de la imagen en esas frecuencias y no ruido.
+  - std de la diferencia: sube siempre con el ancho (0.0181 → 0.0202). Lo que se saca por sobre ~0.018 ya no es ruido, es información de la imagen.
+  - Con el mismo radio de H = 0.5 el gaussiano saca un poco menos que el ideal y deja el mismo residuo.
+- Conclusión por ahora: pasado ~0.005 no se gana nada en ruido y se pierde más imagen. Casos principales para mirar con imágenes: 0.001 (angosto), 0.005 (el codo) y 0.04 (ancho), en los dos filtros.
