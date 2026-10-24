@@ -250,3 +250,79 @@ def notch_gaussiano(
         H = H * H_centro
 
     return H
+
+
+def filtrar_notch(
+    imagen,
+    tipo_filtro,
+    lista_centros,
+    ancho_notch,
+    tipo_padding,
+    tam_padding,
+):
+
+    alto = imagen.shape[0]
+    ancho = imagen.shape[1]
+
+    # sin padding no hay que recortar nada
+    if tipo_padding == "ninguno":
+        tam_padding = 0
+
+    # 1. padding
+    imagen_pad = aplicar_padding(
+        imagen,
+        tipo_padding,
+        tam_padding,
+    )
+
+    # 2. fft2 + fftshift
+    F = calcular_espectro(imagen_pad)
+
+    # 3. filtro del mismo tamano que la imagen con padding
+    alto_pad = imagen_pad.shape[0]
+    ancho_pad = imagen_pad.shape[1]
+
+    U, V = crear_grilla_frecuencias(
+        alto_pad,
+        ancho_pad,
+    )
+
+    if tipo_filtro == "ideal":
+        H = notch_ideal(
+            U,
+            V,
+            lista_centros,
+            ancho_notch,
+        )
+    elif tipo_filtro == "gaussiano":
+        H = notch_gaussiano(
+            U,
+            V,
+            lista_centros,
+            ancho_notch,
+        )
+    else:
+        raise ValueError(f"tipo_filtro no valido: {tipo_filtro}")
+
+    # 4. multiplicar el espectro complejo por H
+    F_filtrado = F * H
+
+    # 5. volver al orden de la fft y transformada inversa
+    F_filtrado = np.fft.ifftshift(F_filtrado)
+    resultado = np.fft.ifft2(F_filtrado)
+
+    # la parte imaginaria deberia ser casi cero porque H es simetrico
+    max_imag = np.max(np.abs(np.imag(resultado)))
+    print(f"  parte imaginaria maxima: {max_imag:.2e}")
+
+    imagen_filtrada_pad = np.real(resultado)
+
+    # 6. recortar al tamano original
+    imagen_filtrada = recortar_padding(
+        imagen_filtrada_pad,
+        alto,
+        ancho,
+        tam_padding,
+    )
+
+    return imagen_filtrada

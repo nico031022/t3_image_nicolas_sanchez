@@ -55,3 +55,17 @@
   - max |H(u, v) − H(−u, −v)| = 0 (ideal) y ~7e-15 (gaussiano): H es simétrico, la imagen filtrada debería salir real.
   - Se elimina (H < 0.5) el 0.16 % del espectro con el ideal y el 0.05 % con el gaussiano.
 - Por ahora los agujeros son circulares (un solo ancho). Ver en el barrido si alcanza para el pico de 0.25, que es más largo en u.
+
+### Filtrado completo (`filtrar_notch`, `test_p1_filtrado`)
+
+- Cadena: padding → `fft2` + `fftshift` → H del tamaño de la imagen con padding → F · H (espectro complejo) → `ifftshift` + `ifft2` → parte real → recorte. Por ahora sin padding, radio = 0.01 y σ = 0.005 (los mismos de prueba).
+- La parte imaginaria máxima después de la ifft es ~5e-16 en los dos filtros (error numérico), o sea la imagen filtrada sale real porque H es simétrico.
+- El promedio de la imagen no cambia (0.091652 antes y después), porque H(0, 0) = 1.
+- En los picos, |F|/mediana pasa de 325–1474 a 0 con el ideal. Con el gaussiano queda ~0.09 en ±0.25: el fondo del agujero gaussiano es 0 solo justo en el centro y el pico está en 0.2501, no en 0.25.
+- Perfil del cielo (filas 100–400, columnas 2400–3200, mediana por columna y por fila):
+  - Antes: un salto cada 4 columnas (columnas 2, 6, 10, …) y las filas alternan cada 2. Es el patrón que se veía en el espectro.
+  - Después: los dos filtros dejan el perfil plano.
+- Zoom en la zona de M43 (filas 2180–2308, columnas 1650–1778): la grilla del mosaico casi desaparece, pero en la parte más brillante de la nebulosa todavía se ve un poco. Ahí el color cambia más y el pico de Bayer es más ancho que el agujero. Mirar esto en el barrido de anchos.
+- Los pixeles calientes (puntos blancos sueltos) siguen ahí, no son periódicos y el notch no los toca.
+- La diferencia a imagen completa se ve casi gris uniforme porque al achicar la figura la grilla se promedia; hay que mirarla con zoom.
+- Correr el script toma ~20 s y usa ~2.3 GB de memoria (varias matrices de 2856 × 4290).
