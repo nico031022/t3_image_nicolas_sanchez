@@ -118,3 +118,26 @@
   - El ideal con 0.04 todavía deja 0.035: el borde duro del agujero produce oscilaciones (ringing, clase 14).
 - Comparando los filtros: con el mismo ancho el ruido residual es parecido; la diferencia está en los artefactos, sobre todo con agujeros anchos, donde el gaussiano es mucho mejor.
 - Para la configuración final hay un compromiso: un agujero angosto saca poco de imagen pero mete artefactos donde no había patrón; uno ancho gaussiano limpia mejor la grilla y no mete artefactos, pero saca más estructura de la nebulosa. Decidir después de ver el padding.
+
+### Comparación de padding (`test_p1_padding`)
+
+- Filtros: ideal y gaussiano con 0.005 (el codo del barrido). Padding: ninguno, ceros, reflejo y borde, con 32, 128 y 256 pixeles por lado.
+- Por qué 32, 128 y 256: lo que saca el notch gaussiano, en el espacio, es la frecuencia del ruido multiplicada por una gaussiana de std s = 1/(2πσ) (la transformada de una gaussiana de std σ en frecuencia). Con σ = 0.005, s ≈ 32 pixeles, y el filtro usa pixeles hasta ~3s ≈ 95 de distancia. Entonces 32 ≈ 1s (debería quedar corto), 128 ≈ 4s (debería alcanzar) y 256 ≈ 8s (sobra). Si se cambia σ, el padding que alcanza sería ~4/(2πσ).
+- Métrica: en franjas de 48 pixeles en cada borde, std de la mediana por columna (izquierda/derecha) o por fila (arriba/abajo). Al medio de la imagen da ~0.0005 después de filtrar.
+
+| padding | izq | der | arr | aba |
+|---|---|---|---|---|
+| ruidosa | 0.0076 | 0.0077 | 0.0088 | 0.0063 |
+| ninguno (gauss / ideal) | 0.0030 / 0.0033 | 0.0032 / 0.0035 | 0.0004 | 0.0004 |
+| ceros 128 | 0.0029 / 0.0031 | 0.0034 / 0.0037 | 0.0024 / 0.0029 | 0.0028 / 0.0030 |
+| borde 128 | 0.0028 / 0.0030 | 0.0032 / 0.0036 | 0.0026 / 0.0030 | 0.0030 / 0.0035 |
+| reflejo 32 | 0.0003 / 0.0009 | 0.0031 / 0.0034 | 0.0003 | 0.0004 |
+| reflejo 128 | 0.0003 / 0.0004 | 0.0030 / 0.0033 | 0.0003 | 0.0004 |
+| reflejo 256 | 0.0003 / 0.0003 | 0.0030 / 0.0033 | 0.0003 | 0.0004 |
+
+- Sin padding: arriba y abajo quedan bien, pero izquierda y derecha no. La FFT toma la imagen como si se repitiera. El alto (2856) es par, así que al pegar el borde de abajo con el de arriba el patrón de Bayer (periodo 2) sigue igual. El ancho (4290) no es múltiplo de 4, entonces al pegar derecha con izquierda el patrón de cada 4 columnas se corta (salta de fase) y cerca de esos bordes no se puede sacar bien. Es lo mismo que hacía que el pico de 0.25 se viera ancho en u.
+- Ceros y borde empeoran arriba y abajo (de 0.0004 a ~0.0025–0.0035): lo que se agrega no tiene el patrón y se crea un corte en los cuatro bordes. En el zoom se ven rayas en esos bordes.
+- Reflejo arregla el borde izquierdo pero no el derecho. El patrón de cada 4 columnas es simétrico respecto a las columnas pares (0, 2, 4, …). Al reflejar en la columna 0 el patrón sigue bien; en la derecha el espejo queda en la columna 4289, que es impar, y el patrón queda mal pegado. Con el mismo padding en los cuatro lados no se puede arreglar eso. A la derecha reflejo queda igual que sin padding, no peor. (Posible mejora: un padding distinto a cada lado para que el eje del espejo quede en una columna par.)
+- Tamaño: con el gaussiano el reflejo ya funciona con 32. El ideal necesita más (izquierda: 0.0009 con 32, 0.0004 con 128, 0.0003 con 256), porque su respuesta en el espacio (tipo jinc, clase 14) baja mucho más lento que una gaussiana.
+- Tiempo: con padding de 128 el filtrado tarda ~50 % más (ideal 1.9 s → 2.9 s), con 256 casi igual que con 128.
+- Elección para el resto de la pregunta: **reflejo con 128 pixeles por lado**. Es el único que mejora un borde sin empeorar otros, 128 alcanza para los dos filtros (4s del gaussiano) y 256 no mejora más.
