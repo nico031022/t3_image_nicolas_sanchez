@@ -89,3 +89,32 @@
   - std de la diferencia: sube siempre con el ancho (0.0181 → 0.0202). Lo que se saca por sobre ~0.018 ya no es ruido, es información de la imagen.
   - Con el mismo radio de H = 0.5 el gaussiano saca un poco menos que el ideal y deja el mismo residuo.
 - Conclusión por ahora: pasado ~0.005 no se gana nada en ruido y se pierde más imagen. Casos principales para mirar con imágenes: 0.001 (angosto), 0.005 (el codo) y 0.04 (ancho), en los dos filtros.
+
+### Barrido de anchos: casos principales (`test_p1_casos`)
+
+- Casos: 0.001, 0.005 y 0.04 en los dos filtros, sin padding. Por cada caso se muestra un zoom de M43, la diferencia en ese zoom (misma escala ±0.135 para todos), un zoom de la estrella brillante de arriba a la derecha (centro (1090, 3358), núcleo saturado de radio ~25) y el espectro filtrado cerca de (0.25, 0) y de (−0.5, −0.5) (misma escala que el espectro original). A imagen completa los resultados se ven iguales (commit anterior), por eso se usan zooms.
+- Para ver artefactos se usa el núcleo saturado de la estrella: en la imagen original es plano (std = 0.0036 en 12 × 12 pixeles), entonces lo que aparezca ahí después de filtrar lo puso el filtro.
+
+| caso | std núcleo | std diferencia |
+|---|---|---|
+| ruidosa | 0.0036 | — |
+| ideal 0.001 | 0.0138 | 0.01840 |
+| ideal 0.005 | 0.0645 | 0.01908 |
+| ideal 0.04 | 0.0353 | 0.02024 |
+| gaussiano 0.001 | 0.0145 | 0.01833 |
+| gaussiano 0.005 | 0.0738 | 0.01896 |
+| gaussiano 0.04 | 0.0001 | 0.02018 |
+
+- Ruido residual:
+  - Con 0.001 la grilla del mosaico se sigue viendo en M43 y en el halo de la estrella. La diferencia es una grilla pareja en todo el zoom: el filtro saca un patrón "promedio" igual en toda la imagen.
+  - Con 0.005 la grilla baja en M43 pero todavía se ve en la parte más brillante y en el halo.
+  - Con 0.04 casi desaparece en M43, y la diferencia ya no es pareja, sigue la forma de la nebulosa.
+  - En el halo de la estrella queda grilla en todos los casos.
+- Por qué pasa: el mosaico de Bayer no es un ruido que se suma, es el color de la escena multiplicado por un patrón 2 × 2. Donde el color cambia rápido (estrella, borde de la nebulosa) el pico se abre en el espectro, y un notch angosto solo saca la parte "pareja" del patrón.
+- Pérdida de detalle: al ensanchar, la diferencia empieza a mostrar la estructura de la nebulosa (bordes de M43), o sea se está sacando imagen y no solo ruido. Coincide con que la std de la diferencia sube siempre.
+- Artefactos:
+  - Con 0.001 y 0.005 aparece una grilla dentro del núcleo saturado, donde antes no había nada (std 0.0036 → 0.014 y 0.065–0.074). El filtro le resta el patrón "promedio" de toda la imagen también a una zona que no lo tenía.
+  - Con 0.04 el gaussiano deja el núcleo plano (0.0001): con un agujero ancho la parte que se saca está más concentrada en el espacio y sigue lo que pasa localmente.
+  - El ideal con 0.04 todavía deja 0.035: el borde duro del agujero produce oscilaciones (ringing, clase 14).
+- Comparando los filtros: con el mismo ancho el ruido residual es parecido; la diferencia está en los artefactos, sobre todo con agujeros anchos, donde el gaussiano es mucho mejor.
+- Para la configuración final hay un compromiso: un agujero angosto saca poco de imagen pero mete artefactos donde no había patrón; uno ancho gaussiano limpia mejor la grilla y no mete artefactos, pero saca más estructura de la nebulosa. Decidir después de ver el padding.
