@@ -200,3 +200,46 @@
 - Limitaciones:
   - Quedan artefactos en las estrellas saturadas chicas (std ~0.025) y un poco de grilla alrededor de las estrellas brillantes. El mosaico de Bayer no es un ruido sumado sino el color de la escena multiplicado por un patrón, y donde el color cambia muy rápido un notch no lo puede sacar entero sin sacar también la imagen. Las zonas saturadas son solo el 0.73 % de la imagen y ahí no había información real.
   - El borde derecho sigue con algo del patrón de 4 columnas (ver padding).
+
+### Apoyo para las preguntas guiadas (`test_p1_preguntas`)
+
+- Se usa la configuración final (gaussiano σ = 0.03, reflejo 128). La cadena se hace a mano paso a paso (padding, fft, H, F · H, ifft, recorte) para tener F y H en la mano. Revisión: la cadena a mano da exactamente lo mismo que `filtrar_notch` (diferencia máxima 0).
+- Todos los números quedan en `results/pregunta1/preguntas/preguntas_guiadas.txt`.
+
+**P1 (simetría)**
+- Una sinusoide real es cos θ = (e^{jθ} + e^{−jθ})/2, o sea dos exponenciales con frecuencias opuestas, por eso aparecen dos picos en ±(u0, v0). En general, para una imagen real F(−u, −v) = conj(F(u, v)).
+- En los datos: |F(−u, −v) − conj(F(u, v))| ≈ 1e-11 en el pico de 0.25 (con |F| ≈ 34669, error numérico).
+- En el pico de Bayer (−0.5, −0.5) el simétrico es el mismo pixel, y F sale real (−156862.94 + 0j).
+- En el código: `agregar_simetricos` agrega (−u0, −v0) por cada centro, salvo si cada coordenada es 0 o ±0.5.
+
+**P2 (coordenadas y distancia)**
+- `crear_grilla_frecuencias` arma U y V en ciclos/pixel con `fftfreq` + `fftshift`, en el mismo orden que el espectro centrado.
+- `distancia_a_centro` calcula du = |U − u0| y dv = |V − v0|, los pasa a `min(d, 1 − d)` porque el espectro es periódico con periodo 1, y D = √(du² + dv²).
+- La distancia es la misma para los dos filtros. Lo que cambia es cómo se usa D: el ideal compara D ≤ radio (pone 0 o 1), el gaussiano calcula 1 − exp(−D²/(2σ²)) (cae suave). Si hay varios centros se multiplican los H de cada uno.
+
+**P3 (padding y recorte)**
+- 2856 × 4290 → reflejo de 128 por lado → 3112 × 4546.
+- El reflejo pone fuera de la imagen los pixeles de adentro en espejo sin repetir el borde (`np.pad` con `mode="reflect"`): la columna −1 es la columna 1, la −2 es la 2, etc. (verificado en el script).
+- Después de la ifft se toma filas [128, 2984) y columnas [128, 4418) (`recortar_padding`). El recorte de la imagen con padding es igual a la original (verificado).
+
+**P4 (espectro complejo)**
+- (a) F · H; (b) H solo en la magnitud y la fase sin tocar: |F| · H · e^{j∠F}; (c) H en la magnitud y también en la fase: |F| · H · e^{j·H·∠F}.
+- (a) y (b) son iguales (diferencia máxima ~9e-16): como H es real y ≥ 0, multiplicar F por H solo cambia la magnitud. Por eso se multiplica el espectro complejo directamente: es lo que dice el teorema de convolución y no hay que separar nada.
+- (c) es distinto (diferencia máxima 0.035): donde 0 < H < 1 la fase cambia y esas componentes se corren de lugar (la fase dice dónde está cada onda, cápsula semana 8). En `fase_vs_complejo.png` a simple vista se parece, pero la resta muestra grilla corrida alrededor de la nebulosa.
+
+**P5 (seguimiento de una frecuencia)**
+
+| punto | F antes | H | F · H |
+|---|---|---|---|
+| pico (u = +0.24989, v = 0) | −2699.49 − 34564.10j (\|F\| = 34669.4, fase −1.6487) | 0.000007 | −0.0181 − 0.2323j (\|F\| = 0.233, fase −1.6487) |
+| borde del agujero (u = +0.28003, v = 0) | −66.09 + 133.60j (\|F\| = 149.05, fase +2.0302) | 0.394 | −26.04 + 52.64j (\|F\| = 58.73, fase +2.0302) |
+| Bayer (−0.5, −0.5) | −156862.94 + 0j | 0.000000 | ~0 |
+
+- En los tres casos la fase no cambia, solo la magnitud (se multiplica por H). En el borde del agujero H = 0.394 ≈ 1 − e^{−1/2}, porque está justo a una distancia σ del centro.
+- Ojo: el pico de 0.25 queda en u = 0.24989 y no en 0.25 porque 4546 no es múltiplo de 4. El simétrico se buscó con la frecuencia del pixel (−0.24989), y +0.5 se trató como −0.5 (no existe en la grilla).
+
+**P6 (un solo notch del par)**
+- H con los agujeros de Bayer y un solo agujero en +0.25 (sin el de −0.25).
+- Parte imaginaria máxima después de la ifft: 1.8e-2, contra 1.2e-15 con el par completo. Como H ya no es simétrico, F · H deja de cumplir F(−u, −v) = conj(F(u, v)) y la imagen sale compleja.
+- La parte imaginaria tiene rayas verticales cada 4 columnas, es la exponencial que quedó en −0.25.
+- Cielo, std de la mediana por columna: ruidosa 0.00881, par completo 0.00238, un solo notch 0.00356. En el perfil se ve que el patrón de 4 columnas sigue ahí, más chico: de cos θ = (e^{jθ} + e^{−jθ})/2 se sacó una exponencial y la parte real de la que queda es un coseno con la mitad de amplitud.
