@@ -1,0 +1,49 @@
+PREGUNTA 3: padding y recorte
+  imagen original:   2856 x 4290
+  padding reflejo de 128 pixeles por lado -> 3112 x 4546
+  recorte: filas [128, 2984), columnas [128, 4418)
+  el recorte de la imagen con padding es igual a la original: True
+  columna -1 (reflejo) == columna 1 original: True
+  columna -2 (reflejo) == columna 2 original: True
+
+Revision: max |a mano - filtrar_notch| = 0.00e+00
+
+PREGUNTA 5: valores en algunas frecuencias (gaussiano, sigma = 0.03)
+  pico (0.25, 0): pixel (fila 1556, col 3409), u = +0.24989, v = +0.00000
+    F antes   =   -2699.4886  -34564.1038j   |.| = 34669.3599   fase = -1.6487 rad
+    H         = 0.000007
+    F * H     =      -0.0181      -0.2323j   |.| =     0.2330   fase = -1.6487 rad
+    simetrico: pixel (fila 1556, col 1137), u = -0.24989, v = +0.00000
+    F antes   =   -2699.4886  +34564.1038j   |.| = 34669.3599   fase = +1.6487 rad
+    H         = 0.000007
+    F * H     =      -0.0181      +0.2323j   |.| =     0.2330   fase = +1.6487 rad
+    |F(-u,-v) - conj(F(u,v))| = 1.36e-11
+
+  borde del agujero (0.25 + sigma, 0): pixel (fila 1556, col 3546), u = +0.28003, v = +0.00000
+    F antes   =     -66.0857    +133.5987j   |.| =   149.0501   fase = +2.0302 rad
+    H         = 0.394003
+    F * H     =     -26.0380     +52.6383j   |.| =    58.7262   fase = +2.0302 rad
+    simetrico: pixel (fila 1556, col 1000), u = -0.28003, v = +0.00000
+    F antes   =     -66.0857    -133.5987j   |.| =   149.0501   fase = -2.0302 rad
+    H         = 0.394003
+    F * H     =     -26.0380     -52.6383j   |.| =    58.7262   fase = -2.0302 rad
+    |F(-u,-v) - conj(F(u,v))| = 9.79e-12
+
+  pico de Bayer (-0.5, -0.5): pixel (fila 0, col 0), u = -0.50000, v = -0.50000
+    F antes   = -156862.9412      +0.0000j   |.| = 156862.9412   fase = +3.1416 rad
+    H         = 0.000000
+    F * H     =      -0.0000      +0.0000j   |.| =     0.0000   fase = +3.1416 rad
+    su simetrico es el mismo pixel (frecuencia de Nyquist), por eso F tiene que ser real
+
+PREGUNTA 6: sacar solo uno de los dos notch del par +-0.25
+  max |parte imaginaria|, par completo:  1.32e-15
+  max |parte imaginaria|, un solo notch: 1.82e-02
+  cielo, std de la mediana por columna, ruidosa: 0.00881
+  cielo, std de la mediana por columna, par completo: 0.00238
+  cielo, std de la mediana por columna, un solo notch (parte real): 0.00356
+
+PREGUNTA 4: espectro complejo vs magnitud y fase por separado
+  max |(a) - (b)| (H solo en la magnitud): 8.88e-16
+  max |(a) - (c)| (H tambien en la fase):  3.54e-02
+  std de (a) - (c): 0.00218
+

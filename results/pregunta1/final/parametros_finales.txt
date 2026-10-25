@@ -1,0 +1,18 @@
+Configuracion final P1
+  imagen: images\profesor\p1\P1.CR2, 2856 x 4290
+  filtro: gaussiano
+  ancho (sigma): 0.03 ciclos/pixel
+  centros: [(0.25, 0), (-0.5, -0.5), (-0.5, 0), (0, -0.5)] + simetricos
+  padding: reflejo, 128 pixeles por lado
+  tiempo de filtrado: 5.8 s
+
+Metricas                                   ruidosa    filtrada
+  cielo, std mediana por columna          0.00881    0.00238
+  cielo, std mediana por fila             0.00839    0.00114
+  zonas brillantes, |F| en picos/mediana    449.1       17.2
+  artefactos, std en nucleo nebulosa     0.0036     0.0000
+  artefactos, std en estrella grande     0.0036     0.0016
+  artefactos, std en estrella arriba     0.0036     0.0260
+  artefactos, std en estrella M43        0.0036     0.0226
+  std de la diferencia                       -        0.01986
+  promedio de la imagen                   0.091652   0.091652

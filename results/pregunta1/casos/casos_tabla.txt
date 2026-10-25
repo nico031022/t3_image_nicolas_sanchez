@@ -1,0 +1,8 @@
+caso                      std nucleo estrella   std diferencia
+ruidosa                         0.0036          0.00000
+ideal radio=0.001               0.0138          0.01840
+ideal radio=0.005               0.0645          0.01908
+ideal radio=0.04                0.0353          0.02024
+gaussiano sigma=0.001           0.0145          0.01833
+gaussiano sigma=0.005           0.0738          0.01896
+gaussiano sigma=0.04            0.0001          0.02018
