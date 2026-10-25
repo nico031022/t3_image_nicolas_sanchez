@@ -141,3 +141,36 @@
 - Tamaño: con el gaussiano el reflejo ya funciona con 32. El ideal necesita más (izquierda: 0.0009 con 32, 0.0004 con 128, 0.0003 con 256), porque su respuesta en el espacio (tipo jinc, clase 14) baja mucho más lento que una gaussiana.
 - Tiempo: con padding de 128 el filtrado tarda ~50 % más (ideal 1.9 s → 2.9 s), con 256 casi igual que con 128.
 - Elección para el resto de la pregunta: **reflejo con 128 pixeles por lado**. Es el único que mejora un borde sin empeorar otros, 128 alcanza para los dos filtros (4s del gaussiano) y 256 no mejora más.
+
+### Barrido con padding y artefactos (`test_p1_barrido_padding`)
+
+- Antes de elegir la configuración final se repite el barrido con el padding elegido (reflejo 128) y se agrega la métrica de artefactos de `test_p1_casos`, pero en varias zonas saturadas y no solo en una estrella.
+- Zonas saturadas: en `saturados.png` (imagen > 1, el 0.73 % de los pixeles) se ven el núcleo de la nebulosa, la estrella grande de arriba a la derecha, una estrella más arriba y la estrella de M43. Se usa una ventana chica en cada una (24, 12, 8 y 8 pixeles de lado) y se revisó que las cuatro quedan 100 % saturadas.
+- Anchos: 0.005, 0.01, 0.015, 0.02, 0.03 y 0.04, porque en `test_p1_casos` los artefactos cambiaban mucho entre 0.005 y 0.04.
+- Criterio (antes de mirar los números): el residuo en las zonas brillantes ya llega al piso cerca de 0.005 (barrido anterior), así que más ancho no saca más ruido. Lo que queda por decidir es el compromiso entre artefactos (bajan al ensanchar) y lo que se le saca a la imagen (sube al ensanchar).
+
+| filtro | ancho | zonas brill. | artefactos (prom. 4 zonas) | std diferencia |
+|---|---|---|---|---|
+| ruidosa | — | 449.1 | 0.0036 | — |
+| ideal | 0.005 | 16.7 | 0.0313 | 0.01909 |
+| ideal | 0.01 | 16.6 | 0.0565 | 0.01939 |
+| ideal | 0.015 | 17.5 | 0.0568 | 0.01953 |
+| ideal | 0.02 | 16.7 | 0.0437 | 0.01967 |
+| ideal | 0.03 | 16.9 | 0.0455 | 0.01993 |
+| ideal | 0.04 | 17.0 | 0.0172 | 0.02024 |
+| gaussiano | 0.005 | 18.8 | 0.0340 | 0.01897 |
+| gaussiano | 0.01 | 16.9 | 0.0434 | 0.01926 |
+| gaussiano | 0.015 | 16.7 | 0.0360 | 0.01944 |
+| gaussiano | 0.02 | 16.8 | 0.0263 | 0.01958 |
+| gaussiano | 0.03 | 17.2 | 0.0125 | 0.01986 |
+| gaussiano | 0.04 | 17.6 | 0.0059 | 0.02018 |
+
+- Zonas brillantes: todos entre 16.6 y 18.8, o sea todos en el piso (la imagen ruidosa da 449). Por esto no se puede elegir entre ellos.
+- Artefactos:
+  - El ideal sube y baja sin orden (ringing del borde duro del agujero) y en su mejor caso (0.04) deja 0.017, ~3 veces más que el gaussiano con el mismo ancho. El gaussiano baja de forma ordenada desde 0.01.
+  - En el núcleo de la nebulosa (la zona saturada más grande) el gaussiano no deja nada desde 0.01. En las estrellas chicas cuesta más (con 0.03: 0.026 y 0.023; con 0.04: ~0.012), porque la zona plana es chica y el borde de la estrella queda cerca.
+- Lo que se saca: sube con el ancho en los dos; el gaussiano siempre saca un poco menos que el ideal.
+- Con esto el filtro final debería ser el gaussiano: mismo residuo, menos artefactos y saca menos imagen. El ancho queda entre 0.03 y 0.04:
+  - 0.03: artefactos 0.0125 (la estrella grande y el núcleo quedan limpios, en las estrellas chicas queda algo) y saca un poco menos de imagen.
+  - 0.04: artefactos 0.0059 (la mitad), pero saca más imagen (0.02018 contra 0.01986) y es el borde del rango probado.
+  - Se decide en la configuración final.
