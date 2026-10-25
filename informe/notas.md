@@ -174,3 +174,29 @@
   - 0.03: artefactos 0.0125 (la estrella grande y el núcleo quedan limpios, en las estrellas chicas queda algo) y saca un poco menos de imagen.
   - 0.04: artefactos 0.0059 (la mitad), pero saca más imagen (0.02018 contra 0.01986) y es el borde del rango probado.
   - Se decide en la configuración final.
+
+### Configuración final (`test_p1_final`)
+
+- **Notch gaussiano, σ = 0.03, padding reflejo de 128 pixeles por lado**, centros (0.25, 0), (−0.5, −0.5), (−0.5, 0), (0, −0.5) + simétricos.
+- Por qué:
+  - Gaussiano y no ideal: el residuo es el mismo, pero el ideal mete artefactos que suben y bajan con el ancho (ringing) y siempre saca un poco más de imagen.
+  - σ = 0.03: desde σ ≈ 0.005 el residuo del patrón ya no baja, así que ensanchar solo sirve para bajar los artefactos en las zonas saturadas, a costa de sacar más información de la imagen. Con 0.03 el núcleo de la nebulosa y la estrella grande quedan sin artefactos y se saca menos imagen que con 0.04. Además 0.03 queda dentro del rango probado (hay datos a los dos lados), en cambio 0.04 es el borde.
+  - Reflejo 128: es el único padding que mejora un borde sin empeorar los otros, y 128 alcanza para el gaussiano.
+
+| métrica | ruidosa | filtrada |
+|---|---|---|
+| cielo, std mediana por columna | 0.00881 | 0.00238 |
+| cielo, std mediana por fila | 0.00839 | 0.00114 |
+| zonas brillantes, \|F\| en picos / mediana | 449.1 | 17.2 |
+| artefactos, núcleo nebulosa | 0.0036 | 0.0000 |
+| artefactos, estrella grande | 0.0036 | 0.0016 |
+| artefactos, estrella arriba | 0.0036 | 0.0260 |
+| artefactos, estrella M43 | 0.0036 | 0.0226 |
+| std de la diferencia | — | 0.01986 |
+| promedio | 0.091652 | 0.091652 |
+
+- Parte imaginaria máxima después de la ifft: ~1e-15. Filtrar tarda ~3.6 s.
+- En los zoom: en M43 la grilla casi desaparece y se mantiene el degradado de la nebulosa; en el cielo queda limpio. En la estrella grande el centro queda plano, pero en el borde del disco saturado y en el halo todavía se ve algo de grilla.
+- Limitaciones:
+  - Quedan artefactos en las estrellas saturadas chicas (std ~0.025) y un poco de grilla alrededor de las estrellas brillantes. El mosaico de Bayer no es un ruido sumado sino el color de la escena multiplicado por un patrón, y donde el color cambia muy rápido un notch no lo puede sacar entero sin sacar también la imagen. Las zonas saturadas son solo el 0.73 % de la imagen y ahí no había información real.
+  - El borde derecho sigue con algo del patrón de 4 columnas (ver padding).
