@@ -389,3 +389,55 @@
 - El costo baja en todas las iteraciones (nunca sube): 55.08 → 44.17.
 - RMSE: 0.0807 (y) → 0.0659 al final. El mínimo es 0.0658 en la iteración 315 y después sube un poquito.
 - El cambio relativo baja como una recta en escala log: de 1e-4 a 1e-6 en ~870 iteraciones, o sea ×0.9947 por iteración. Es casi 1 − τλ = 0.9954, el factor de las frecuencias donde H ≈ 0. Esas frecuencias son las que más demoran en converger.
+
+### Parte B: barrido de λ y τ (`test_p2_tikhonov_barrido`)
+
+- σ = 0.01, el mismo y de siempre. x₀ = y.
+- λ: K_opt / 10, K_opt y K_opt × 10 (4.64e-4, 4.64e-3, 4.64e-2), un orden de magnitud a cada lado del K_opt de Wiener, más λ = 0.
+- τ: el límite de estabilidad es 2 / (1 + λ) (1.991 con K_opt). Se prueba 0.5 (lento), 1.0 (seguro), 1.9 (cerca del límite) y 2.05 (pasado el límite).
+- Para no hacer las 16 combinaciones: barrido de τ con λ = K_opt y barrido de λ con τ = 1.
+- max_iter = 3000: con λ = K_opt y τ = 1 la frecuencia más lenta se multiplica por (1 − τλ) cada iteración, o sea baja e veces cada 1/(τλ) ≈ 215 iteraciones; 3000 es más que suficiente para converger (en el check bastaron ~1000). Con λ = K_opt / 10 (1/(τλ) ≈ 2150) o λ = 0 se espera que no alcance.
+- Se corre con tol = 1e-7 (el más chico) y después, con la lista de cambios guardada, se mira en qué iteración habría parado cada tol.
+- Tiempo total ~4.5 min (las corridas que llegan a 3000 iteraciones demoran ~55 s cada una).
+
+**Barrido de τ (λ = 4.64e-3)**
+
+| τ | iteraciones | para por | RMSE final | RMSE mínimo (iter) |
+|---|---|---|---|---|
+| 0.5 | 2815 | tol | 0.0659 | 0.0658 (630) |
+| 1.0 | 1551 | tol | 0.0659 | 0.0658 (315) |
+| 1.9 | 886 | tol | 0.0659 | 0.0658 (165) |
+| 2.05 | 3000 | max_iter | 4.5e72 | 0.0679 (26) |
+
+- Con τ < 2 / (1 + λ) las tres llegan al mismo resultado (costo 44.17, RMSE 0.0659); cambia solo la velocidad. El número de iteraciones va más o menos como 1/τ (0.5 → 2815, 1.9 → 886): **convergencia lenta** con τ chico.
+- τ = 2.05 es **inestable**: en las primeras ~26 iteraciones baja el RMSE (las frecuencias medias todavía convergen), pero la frecuencia (0, 0), donde |H| = 1, tiene factor |1 − 2.05 · (1 + λ)| = 1.0595 y crece en cada iteración. El costo sube ×1.12 por iteración (= 1.0595²) y llega a 6.6e149. No llega a infinito en 3000 iteraciones, entonces no se activa el corte por `isfinite`; para por max_iter.
+
+**Barrido de λ (τ = 1)**
+
+| λ | iteraciones | para por | RMSE final | RMSE mínimo (iter) |
+|---|---|---|---|---|
+| 0 | 3000 | max_iter | 0.1403 | 0.0661 (172) |
+| 4.64e-4 | 3000 | max_iter | 0.0969 | 0.0660 (185) |
+| 4.64e-3 | 1551 | tol | 0.0659 | 0.0658 (315) |
+| 4.64e-2 | 194 | tol | 0.0747 | 0.0747 (194) |
+
+- **λ = 0: semi-convergencia** (clase 17). El RMSE baja hasta 0.0661 en la iteración 172 y después sube sin parar (0.140 en la 3000): primero se recuperan las frecuencias donde H es grande y después se empieza a amplificar el ruido donde H es chico, acercándose a la solución ingenua Y / H. Es lo mismo que el gráfico de la clase 17 (λ = 0 sube después de ~450 iteraciones). El número de iteraciones hace de regularizador.
+- **λ = K_opt / 10: convergencia lenta**, también sube después de la 185 (0.0969 en la 3000) y no cumple el criterio en 3000 iteraciones. Va hacia su propia solución, que tiene poco regularización.
+- **λ = K_opt**: converge y queda en 0.0659, igual que Wiener con K = K_opt (0.0659). El mínimo 0.0658 está antes (iter 315) y después sube muy poco.
+- **λ = K_opt × 10: sobre-regularización**. Converge rápido (194 iteraciones, 1/(τλ) ≈ 22) pero a una imagen más suave y más oscura, RMSE 0.0747.
+- El costo final no sirve para comparar entre λ distintos (es otra función J para cada λ).
+- `imagenes_lambda.png`: λ = 0 y K_opt / 10 terminan con manchas de ruido amplificado, λ = K_opt queda como Wiener, λ = K_opt × 10 queda borrosa.
+
+**Efecto del criterio de detención (τ = 1)**
+
+| tol | λ = 0 | λ = 4.64e-4 | λ = 4.64e-3 | λ = 4.64e-2 |
+|---|---|---|---|---|
+| 1e-3 | 22 it., 0.0692 | 21 it., 0.0693 | 20 it., 0.0696 | 12 it., 0.0760 |
+| 1e-4 | 833 it., 0.0774 | 442 it., 0.0678 | 161 it., 0.0660 | 49 it., 0.0747 |
+| 1e-5 | no se cumple | no se cumple | 598 it., 0.0659 | 97 it., 0.0747 |
+| 1e-6 | no se cumple | no se cumple | 1072 it., 0.0659 | 146 it., 0.0747 |
+| 1e-7 | no se cumple | no se cumple | 1551 it., 0.0659 | 194 it., 0.0747 |
+
+- Con λ = K_opt, desde tol = 1e-5 el RMSE ya no cambia y achicar tol solo agrega iteraciones (598 → 1551). Con 1e-4 queda en 0.0660, casi igual.
+- Con λ = 0 o λ chico, un tol grande (1e-3) para temprano y da mejor RMSE que dejarlo correr: parar antes funciona como regularización (semi-convergencia). Con tol chico no para nunca y el resultado empeora.
+- tol = 1e-3 es demasiado grande: para a las ~20 iteraciones sin haber convergido (0.0696 con K_opt).
