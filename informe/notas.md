@@ -359,7 +359,7 @@
 | correcta | 0 | 0.0659 | 4.64e-3 | 0.0659 |
 | corrida 1 px | 0.291 | 0.0771 | 8.58e-3 | 0.0765 |
 | ancha × 1.1 | 0.164 | 0.0684 | 6.31e-3 | 0.0682 |
-| angosta × 0.9 | 0.139 | 0.0677 | 6.31e-3 | 0.0677 |
+| angosta × 0.9 | 0.139 | 0.0679 | 6.31e-3 | 0.0677 |
 
 - Las tres empeoran el RMSE (y = 0.0807 sigue siendo peor). La corrida es la que más (+17 %), la ancha y la angosta ~+3 %.
 - Con la PSF mal el K óptimo sube (6.3e-3 y 8.6e-3): el error del modelo actúa como ruido extra y conviene regularizar más. Pero re-optimizar K casi no arregla nada (0.0771 → 0.0765), el error viene de la PSF.
@@ -367,3 +367,25 @@
 - **Ancha × 1.1**: se deconvoluciona de más; en el zoom aparecen halos/anillos paralelos a los bordes (oscilaciones, sobre todo en el abrigo y el trípode).
 - **Angosta × 0.9**: se deconvoluciona de menos, queda un poco más borrosa que la correcta y con menos halos.
 - La PSF ancha y la angosta tienen error relativo parecido (0.16 y 0.14) y dan RMSE casi igual, pero el tipo de artefacto es distinto (anillos vs borroso).
+
+### Parte B: Tikhonov por descenso de gradiente (`tikhonov_gd`, `test_p2_tikhonov_check`)
+
+- Problema: min ½‖h * x − y‖² + λ/2 ‖x‖² (clase 17). Gradiente: ∇J = Hᵀ(Hx − y) + λx.
+  - En `tikhonov_gd`: `grad_fidelidad = aplicar_Ht(residuo, H)` con `residuo = aplicar_H(x, H) - y` (término de fidelidad) y `grad_regularizacion = lam * x` (término de regularización).
+  - Actualización: `x_nuevo = x - tau * gradiente`.
+- H y Hᵀ con el mismo modelo circular: `aplicar_H` multiplica por H y `aplicar_Ht` por conj(H) (clase 17: F⁻¹ H* F). No se arma ninguna matriz.
+- Inicio x₀ = y (clase 17: Landweber parte con f⁽⁰⁾ = g).
+- Criterio de detención (clase 17): cambio = ‖x_{k+1} − x_k‖ / ‖x_k‖, entre dos iteraciones seguidas. Se calcula dentro del `for` después de cada actualización y si `cambio < tol` se hace `break`. Si no, para en `max_iter`. También para si el costo deja de ser finito (diverge).
+- Se guarda por iteración el costo, el RMSE (si se le pasa x_real) y el cambio relativo.
+- Por qué τ < 2 / (1 + λ): en Fourier cada frecuencia cumple X_{k+1} = (1 − τ(|H|² + λ)) X_k + τ H* Y. Igual que la condición de Van Cittert de la clase 17 (|1 − αH| < 1), para que no crezca hay que pedir |1 − τ(|H|² + λ)| < 1 en todas las frecuencias. Como max |H| = H(0, 0) = 1, queda 0 < τ < 2 / (1 + λ).
+
+**Revisiones**
+- Adjunto: con a y b aleatorias, ⟨Ha, b⟩ = ⟨a, Hᵀb⟩ con diferencia relativa ~1e-15.
+- `psf_a_otf` de la PSF girada 180° da conj(H) (diferencia 2.8e-16): Hᵀ es la convolución con la PSF girada (correlación con h).
+- Como la PSF no es simétrica, Hᵀy y Hy no son iguales: diferencia máxima 8.5e-4 (con valores de hasta 0.83). Es poca porque la asimetría es chica (0.78 %), pero si se usara H en vez de Hᵀ el gradiente no sería el de J.
+
+**Corrida de prueba** (σ = 0.01, λ = 4.64e-3 = K_opt de Wiener, τ = 1, max_iter = 2000, tol = 1e-6; valores de prueba)
+- Para en la iteración 1072 por el criterio (cambio 9.98e-7), 6 s.
+- El costo baja en todas las iteraciones (nunca sube): 55.08 → 44.17.
+- RMSE: 0.0807 (y) → 0.0659 al final. El mínimo es 0.0658 en la iteración 315 y después sube un poquito.
+- El cambio relativo baja como una recta en escala log: de 1e-4 a 1e-6 en ~870 iteraciones, o sea ×0.9947 por iteración. Es casi 1 − τλ = 0.9954, el factor de las frecuencias donde H ≈ 0. Esas frecuencias son las que más demoran en converger.

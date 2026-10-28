@@ -95,3 +95,88 @@ def wiener(
     x_estimada = np.real(np.fft.ifft2(X_estimada))
 
     return x_estimada
+
+
+def aplicar_Ht(
+    x,
+    H,
+):
+
+    # H transpuesta: en frecuencia es multiplicar por el conjugado de H
+    # (es la correlacion con h, o convolucion con h girada en 180 grados)
+    X = np.fft.fft2(x)
+    resultado = np.fft.ifft2(X * np.conj(H))
+
+    return np.real(resultado)
+
+
+def costo_tikhonov(
+    x,
+    y,
+    H,
+    lam,
+):
+
+    residuo = aplicar_H(x, H) - y
+
+    fidelidad = 0.5 * np.sum(residuo**2)
+    regularizacion = 0.5 * lam * np.sum(x**2)
+
+    return fidelidad + regularizacion
+
+
+def tikhonov_gd(
+    y,
+    H,
+    lam,
+    tau,
+    max_iter,
+    tol,
+    x_real=None,
+):
+
+    # se parte desde la imagen observada (clase 17, Landweber con f0 = g)
+    x = y.copy()
+
+    lista_costo = [costo_tikhonov(x, y, H, lam)]
+    lista_rmse = []
+    lista_cambio = []
+
+    if x_real is not None:
+        lista_rmse.append(calcular_rmse(x, x_real))
+
+    n_iter = 0
+
+    for k in range(max_iter):
+
+        # gradiente = Ht (H x - y) + lam x
+        residuo = aplicar_H(x, H) - y
+        grad_fidelidad = aplicar_Ht(residuo, H)
+        grad_regularizacion = lam * x
+
+        gradiente = grad_fidelidad + grad_regularizacion
+
+        x_nuevo = x - tau * gradiente
+
+        costo = costo_tikhonov(x_nuevo, y, H, lam)
+
+        # criterio de detencion (clase 17): cambio relativo entre dos iteraciones seguidas
+        cambio = np.linalg.norm(x_nuevo - x) / np.linalg.norm(x)
+
+        x = x_nuevo
+        n_iter = k + 1
+
+        lista_costo.append(costo)
+        lista_cambio.append(cambio)
+
+        if x_real is not None:
+            lista_rmse.append(calcular_rmse(x, x_real))
+
+        if not np.isfinite(costo):
+            print(f"  diverge en la iteracion {n_iter}")
+            break
+
+        if cambio < tol:
+            break
+
+    return x, lista_costo, lista_rmse, lista_cambio, n_iter
