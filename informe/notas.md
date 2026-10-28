@@ -293,3 +293,29 @@
   - Son dos de los niveles de la cápsula; 0.01 es además el valor por defecto del panel de Wiener de la cápsula.
   - Son claramente distintos: SNR 34.4 dB vs 20.4 dB (25 veces), cruce 0.165 vs 0.125. Con 0.01 el ruido apenas se ve y el error de y es casi todo desenfoque; con 0.05 el ruido se ve fuerte y aporta una parte importante del error.
   - 0.002 casi no tiene ruido (48 dB). Lo que pasa con poco ruido y el filtro inverso se muestra aparte en la parte A.
+
+### Parte A: filtro de Wiener y filtro inverso (`wiener`, `test_p2_wiener_inversa`)
+
+- `wiener(y, H, K)`: Y = fft2(y), X̂ = H* · Y / (|H|² + K), x̂ = parte real de ifft2(X̂). Es la fórmula del enunciado y de la clase 16 (Wiener paramétrico con R = K). H sale de `psf_a_otf`, sin fftshift, igual que Y.
+- Con K = 0 queda H* / |H|² = 1 / H, o sea el filtro inverso, entonces no hace falta otra función. Como min |H|² = 4e-12 (no es 0) no se divide por cero.
+
+**Filtro inverso (K = 0)**
+
+| σ | RMSE(x̂, x) | min x̂ | max x̂ |
+|---|---|---|---|
+| 0 | 4.8e-13 | ~0 | 1 |
+| 0.01 | 42.3 | −155 | 172 |
+| 0.05 | 211 | −778 | 860 |
+
+- Sin ruido la división recupera x exacta (error de redondeo). El problema no es dividir por H, es el ruido.
+- Con ruido: X̂ = (H X + N) / H = X + N / H. El error es solo el término N / H, y su RMSE es igual al RMSE total (42.3 y 211). Sube 5 veces cuando σ sube 5 veces, es lineal en el ruido.
+- En `inversa_espectros.png` (σ = 0.01, misma escala): |N| es plano (~10^0.4 ≈ σ · √(M·N) = 2.56). 1/|H| es chico al centro pero llega a 10^5 – 10^6 en los ceros de H (el anillo en ~0.17–0.2 y las curvas de afuera). N / H copia la forma de 1/|H|: el ruido queda amplificado justo donde H es casi 0. La amplificación máxima es 1 / min |H| = 5e5.
+- Por eso la imagen sale como ruido de alta frecuencia de amplitud ~±150 (σ = 0.01): las frecuencias altas, donde casi no hay señal (ver cruce en niveles de ruido), quedan llenas de ruido multiplicado por miles.
+
+**Por qué K evita la amplificación (pregunta guiada)**
+- La ganancia de Wiener es |W| = |H| / (|H|² + K).
+  - Si |H|² ≫ K: |W| ≈ 1 / |H|, igual que el inverso (frecuencias bajas, clase 16: "para frecuencias bajas W = 1/H").
+  - Si |H|² ≪ K: |W| ≈ |H| / K → 0, la frecuencia se apaga en vez de amplificarse ("para frecuencias altas W es bajo").
+- Derivando |H| / (|H|² + K) respecto de |H| e igualando a 0: K − |H|² = 0, entonces el máximo está en |H| = √K y vale 1 / (2√K). Con K > 0 ninguna frecuencia se multiplica por más de 1 / (2√K).
+- Revisión con la H de la PSF: K = 1e-4 → max |W| = 50.00; K = 1e-3 → 15.81; K = 1e-2 → 5.00, exactamente 1 / (2√K) en los tres (`ganancia_wiener.png`). Esos K son solo para ver la forma; cuál K conviene se busca en el barrido.
+- En el eje u (`ganancia_wiener.png`, derecha): donde 1/|H| tiene picos (ceros de H en u ≈ ±0.17), |W| baja a casi 0. Mientras más grande K, más frecuencias se apagan y más angosta la zona donde W ≈ 1/H.

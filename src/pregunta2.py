@@ -78,3 +78,20 @@ def calcular_rmse(
     rmse = np.sqrt(np.mean((a - b)**2))
 
     return rmse
+
+
+def wiener(
+    y,
+    H,
+    K,
+):
+
+    Y = np.fft.fft2(y)
+
+    # wiener simplificado: H* Y / (|H|^2 + K)
+    # con K = 0 queda H* / |H|^2 = 1 / H (filtro inverso)
+    X_estimada = np.conj(H) * Y / (np.abs(H)**2 + K)
+
+    x_estimada = np.real(np.fft.ifft2(X_estimada))
+
+    return x_estimada
