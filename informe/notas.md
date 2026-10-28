@@ -258,9 +258,38 @@
   - Limitación: una foto real no es periódica (clase 16: la solución es muy sensible a la condición de borde). En h * x se ve que el cielo de la primera fila se oscurece (hasta 0.23 menos que en x) con las piernas oscuras de la última fila, porque la convolución da la vuelta. Como la imagen degradada se genera con el mismo modelo, esto no aparece como error en la restauración.
 - H (`psf_a_otf`, igual que `psf2otf` de la cápsula): la PSF se pone en la esquina de una imagen de ceros de 256 × 256, se mueve con `np.roll` (−7, −7) para que su centro quede en el pixel (0, 0) y se hace `fft2` sin `fftshift`, así queda en el mismo orden que `fft2(x)`.
 - Revisiones:
-  - Convolución con fft vs a mano (suma de 225 copias de x movidas con `np.roll`): diferencia máxima 1.1e-15. Multiplicar por H es la convolución circular.
-  - Sin el `np.roll` el resultado es la imagen borrosa correcta movida 7 pixeles abajo y a la derecha (diferencia 4.4e-16 con la correcta movida). La diferencia con la correcta llega a 0.76 en los bordes de los objetos (`centrado_psf.png`).
+  - Convolución con fft vs a mano (suma de 225 copias de x movidas con `np.roll`): diferencia máxima ~1e-15. Multiplicar por H es la convolución circular.
+  - Sin el `np.roll` el resultado es la imagen borrosa correcta movida 7 pixeles abajo y a la derecha (diferencia ~5e-16 con la correcta movida). La diferencia con la correcta llega a 0.76 en los bordes de los objetos (`centrado_psf.png`).
 - |H|: máximo 1 en (0, 0), mínimo 2e-6 (|H|² mínimo 4e-12). Es un pasa bajos: cae a casi cero en ~0.17 ciclos/pixel en u y ~0.2 en v (la PSF es un poco elíptica) y después quedan lóbulos chicos.
   - |H| < 0.1 en el 93 % de las frecuencias, < 0.01 en el 78 % y < 0.001 en el 48 %.
   - En esas frecuencias Y / H amplificaría el ruido entre 10 y más de 10⁴ veces (`perfiles_H.png`).
   - Para K: |H|² va de 1 a 4e-12, así que el barrido de K tiene que cubrir muchos órdenes de magnitud (la cápsula usa de 1e-7 a 10).
+
+### Niveles de ruido (`degradar`, `test_p2_degradacion`)
+
+- `degradar`: y = h * x + σ · ruido normal, con `np.random.default_rng(semilla)` como en la cápsula. Semilla 0 fija en toda la P2, así el ruido es el mismo en todos los experimentos.
+- No se recorta y a [0, 1]: si se recorta, el ruido ya no es gaussiano ni sumado y deja de cumplir el modelo g = Hf + n de la clase 17.
+- RMSE = √MSE (MSE de la clase 16). SNR = Σ|F|² / Σ|N|² (clase 16).
+- Niveles probados: 0.002, 0.01 y 0.05 de la cápsula (poco, moderado y mucho ruido) y 0.005 y 0.02 entre medio (factor ~2.5 entre seguidos).
+
+| σ | RMSE(y, x) | SNR | SNR [dB] | cruce [ciclos/pixel] | y fuera de [0, 1] |
+|---|---|---|---|---|---|
+| 0.002 | 0.0801 | 69191 | 48.4 | 0.205 | 0 % |
+| 0.005 | 0.0802 | 11071 | 40.4 | 0.185 | 0 % |
+| 0.01 | 0.0807 | 2768 | 34.4 | 0.165 | 0 % |
+| 0.02 | 0.0825 | 692 | 28.4 | 0.155 | 0.10 % |
+| 0.05 | 0.0944 | 111 | 20.4 | 0.125 | 2.13 % |
+
+- Sin ruido RMSE(h * x, x) = 0.0801: hasta σ = 0.02 casi todo el error de y es por el desenfoque, recién con 0.05 el ruido suma bastante.
+- A la vista (`degradadas.png`): con 0.002 y 0.005 no se ve ruido; con 0.01 se nota un poco en el zoom (el cielo se ve granulado); con 0.02 se ve claro y con 0.05 mucho.
+- `senal_vs_ruido.png` es como el gráfico de la clase 16 (señal que cae y ruido plano): el ruido blanco tiene en promedio σ² · M · N en cada frecuencia, y se compara con el promedio de |H X|² en anillos.
+  - "Cruce" = primer anillo donde |H X|² queda bajo el ruido. Más allá de esa frecuencia domina el ruido y no se puede recuperar la imagen, Wiener debería apagar esas frecuencias.
+  - El cruce se mueve poco (0.205 → 0.125) aunque σ cambie 25 veces, porque |H X|² cae muy rápido entre 0.1 y 0.2 (ahí H llega a su primer cero).
+  - Pasado ~0.2 la señal borrosa es menor a 1e-1 y en la mayoría menor a 1e-3: esas frecuencias se pierden con cualquier σ de los probados.
+
+### Niveles elegidos
+
+- Se usan **σ = 0.01** (ruido moderado) y **σ = 0.05** (mucho ruido) en el resto de la P2.
+  - Son dos de los niveles de la cápsula; 0.01 es además el valor por defecto del panel de Wiener de la cápsula.
+  - Son claramente distintos: SNR 34.4 dB vs 20.4 dB (25 veces), cruce 0.165 vs 0.125. Con 0.01 el ruido apenas se ve y el error de y es casi todo desenfoque; con 0.05 el ruido se ve fuerte y aporta una parte importante del error.
+  - 0.002 casi no tiene ruido (48 dB). Lo que pasa con poco ruido y el filtro inverso se muestra aparte en la parte A.

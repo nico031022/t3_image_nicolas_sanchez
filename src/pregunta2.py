@@ -49,3 +49,32 @@ def aplicar_H(
     resultado = np.fft.ifft2(X * H)
 
     return np.real(resultado)
+
+
+def degradar(
+    x,
+    H,
+    sigma,
+    semilla,
+):
+
+    y_borrosa = aplicar_H(x, H)
+
+    # ruido gaussiano de media 0 (igual que en la capsula)
+    rng = np.random.default_rng(semilla)
+    ruido = sigma * rng.standard_normal(x.shape)
+
+    # no se recorta a [0, 1] para que el ruido siga siendo gaussiano y sumado
+    y = y_borrosa + ruido
+
+    return y
+
+
+def calcular_rmse(
+    a,
+    b,
+):
+
+    rmse = np.sqrt(np.mean((a - b)**2))
+
+    return rmse
