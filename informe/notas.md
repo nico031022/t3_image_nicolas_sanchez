@@ -243,3 +243,24 @@
 - Parte imaginaria máxima después de la ifft: 1.8e-2, contra 1.2e-15 con el par completo. Como H ya no es simétrico, F · H deja de cumplir F(−u, −v) = conj(F(u, v)) y la imagen sale compleja.
 - La parte imaginaria tiene rayas verticales cada 4 columnas, es la exponencial que quedó en −0.25.
 - Cielo, std de la mediana por columna: ruidosa 0.00881, par completo 0.00238, un solo notch 0.00356. En el perfil se ve que el patrón de 4 columnas sigue ahí, más chico: de cos θ = (e^{jθ} + e^{−jθ})/2 se sacó una exponencial y la parte real de la que queda es un coseno con la mitad de amplitud.
+
+## P2
+
+### Datos y modelo de degradación (`src/pregunta2.py`, `test_p2_otf`)
+
+- `cameraman.jpg` es de 256 × 256 con 3 canales iguales, se pasa a gris con `cargar_imagen` de la P1 (queda en [0, 1]).
+- `psf.png` es de 15 × 15. Sumaba 35.45 (en [0, 1]), entonces se divide por su suma para que sume 1 (`cargar_psf`). Así H(0, 0) = 1 y la degradación no cambia el promedio de la imagen (0.465586 antes y después).
+- El máximo de la PSF está en (7, 7) y su centro de masa en (7.002, 7.006), entonces el centro que se usa es (15 // 2, 15 // 2) = (7, 7).
+- La PSF no es exactamente simétrica: max |h − h girada 180°| = 2.2e-4 (0.78 % del máximo). Por eso H tiene una parte imaginaria chica (máx 1.3e-3). Esto importa para la pregunta de Hᵀ.
+- Modelo: convolución circular, hecha en frecuencia con `aplicar_H`. Se usa el mismo en toda la P2.
+  - Es lo que hace la cápsula de la semana 10 (`psf2otf` y `convolucionar`).
+  - En la clase 17 la solución cerrada de Tikhonov queda como Wiener en Fourier porque H es una convolución que la DFT diagonaliza, y eso es exacto solo con convolución circular. Así se puede comparar la solución iterativa con la cerrada sin que el borde meta diferencias.
+  - Limitación: una foto real no es periódica (clase 16: la solución es muy sensible a la condición de borde). En h * x se ve que el cielo de la primera fila se oscurece (hasta 0.23 menos que en x) con las piernas oscuras de la última fila, porque la convolución da la vuelta. Como la imagen degradada se genera con el mismo modelo, esto no aparece como error en la restauración.
+- H (`psf_a_otf`, igual que `psf2otf` de la cápsula): la PSF se pone en la esquina de una imagen de ceros de 256 × 256, se mueve con `np.roll` (−7, −7) para que su centro quede en el pixel (0, 0) y se hace `fft2` sin `fftshift`, así queda en el mismo orden que `fft2(x)`.
+- Revisiones:
+  - Convolución con fft vs a mano (suma de 225 copias de x movidas con `np.roll`): diferencia máxima 1.1e-15. Multiplicar por H es la convolución circular.
+  - Sin el `np.roll` el resultado es la imagen borrosa correcta movida 7 pixeles abajo y a la derecha (diferencia 4.4e-16 con la correcta movida). La diferencia con la correcta llega a 0.76 en los bordes de los objetos (`centrado_psf.png`).
+- |H|: máximo 1 en (0, 0), mínimo 2e-6 (|H|² mínimo 4e-12). Es un pasa bajos: cae a casi cero en ~0.17 ciclos/pixel en u y ~0.2 en v (la PSF es un poco elíptica) y después quedan lóbulos chicos.
+  - |H| < 0.1 en el 93 % de las frecuencias, < 0.01 en el 78 % y < 0.001 en el 48 %.
+  - En esas frecuencias Y / H amplificaría el ruido entre 10 y más de 10⁴ veces (`perfiles_H.png`).
+  - Para K: |H|² va de 1 a 4e-12, así que el barrido de K tiene que cubrir muchos órdenes de magnitud (la cápsula usa de 1e-7 a 10).
