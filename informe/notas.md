@@ -319,3 +319,29 @@
 - Derivando |H| / (|H|² + K) respecto de |H| e igualando a 0: K − |H|² = 0, entonces el máximo está en |H| = √K y vale 1 / (2√K). Con K > 0 ninguna frecuencia se multiplica por más de 1 / (2√K).
 - Revisión con la H de la PSF: K = 1e-4 → max |W| = 50.00; K = 1e-3 → 15.81; K = 1e-2 → 5.00, exactamente 1 / (2√K) en los tres (`ganancia_wiener.png`). Esos K son solo para ver la forma; cuál K conviene se busca en el barrido.
 - En el eje u (`ganancia_wiener.png`, derecha): donde 1/|H| tiene picos (ceros de H en u ≈ ±0.17), |W| baja a casi 0. Mientras más grande K, más frecuencias se apagan y más angosta la zona donde W ≈ 1/H.
+
+### Parte A: barrido de K (`test_p2_wiener_barrido`)
+
+- K: `np.logspace(-7, 1, 61)`, el mismo rango del panel de Wiener de la cápsula (~7.5 valores por década, entre dos seguidos hay un factor 1.36). Alcanza: con K < 1e-4 ya se parece al inverso y con K > 1 se apaga casi todo (|H|² va de 4e-12 a 1).
+- Para mostrar poca y mucha regularización se usa K_opt / 100 y K_opt × 100 (dos órdenes de magnitud a cada lado).
+
+| σ | RMSE y | K_opt | RMSE K_opt | RMSE K_opt / 100 | RMSE K_opt × 100 | 1 / SNR |
+|---|---|---|---|---|---|---|
+| 0.01 | 0.0807 | 4.64e-3 | **0.0659** | 0.3234 | 0.1855 | 3.6e-4 |
+| 0.05 | 0.0944 | 2.93e-2 | **0.0786** | 0.6044 | 0.3974 | 9.0e-3 |
+
+- Las curvas RMSE vs K (`rmse_vs_K.png`) tienen forma de U: a la izquierda domina el ruido amplificado (se va hacia el inverso), a la derecha la sobre-regularización. Solo en una franja (≈ 1e-3 a 5e-2 para σ = 0.01 y ≈ 9e-3 a 1e-1 para σ = 0.05) la restaurada es mejor que y.
+- Con σ = 0.01 el mínimo es más plano (entre 2e-3 y 1e-2 el RMSE cambia menos de 0.002). Con σ = 0.05 la U es más angosta.
+- Más ruido → K_opt más grande (clase 16: R ≈ S_η / S_f, más ruido pide más regularización). K_opt queda en el mismo orden que 1 / SNR o uno más arriba (13 veces con σ = 0.01, 3 veces con 0.05).
+- K_opt(0.05) / K_opt(0.01) = 6.3, no 25 = (0.05/0.01)². Con K constante no se puede seguir exactamente a S_η / S_f, que cambia con la frecuencia; el óptimo es un compromiso entre todas las frecuencias.
+- Mejora sobre y: 0.0807 → 0.0659 (−18 %) y 0.0944 → 0.0786 (−17 %). Es una mejora moderada porque pasado ~0.2 ciclos/pixel no hay señal que recuperar (ver niveles de ruido).
+- Reconstrucciones (`reconstrucciones_sigma_*.png`):
+  - K_opt / 100: manchas de ruido amplificado por toda la imagen (RMSE 0.32 y 0.60).
+  - K_opt: más nítida que y (bordes del abrigo, trípode y cámara), pero en el cielo queda una textura de manchas: es ruido de las frecuencias cerca de donde W todavía amplifica. Con σ = 0.05 la textura es más gruesa y la imagen más suave.
+  - K_opt × 100: borrosa y además más oscura. Con K grande W(0, 0) = 1 / (1 + K) < 1 y baja el promedio (con K = 2.93 el brillo queda en ~1/4). El término λ‖x‖² también castiga el promedio de la imagen, no solo el ruido.
+- Respuesta efectiva |W H| = |H|² / (|H|² + K_opt) (`respuesta_efectiva.png`): ≈ 1 en bajas frecuencias (se recuperan) y ≈ 0 en altas (se apagan). Cae a 0.5 en ~0.155 (σ = 0.01) y ~0.13 (σ = 0.05), casi en el cruce señal/ruido de `test_p2_degradacion` (0.165 y 0.125). O sea, el K óptimo apaga más o menos justo donde el ruido pasa a la señal.
+- Con σ = 0.05 la ganancia en (0, 0) es 0.97 y no 1: el K más grande ya baja un poco el promedio.
+
+### K óptimos (a usar en lo que sigue)
+
+- σ = 0.01: K_opt = 4.64e-3. σ = 0.05: K_opt = 2.93e-2 (valores de la grilla logspace).
