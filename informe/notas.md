@@ -345,3 +345,25 @@
 ### K óptimos (a usar en lo que sigue)
 
 - σ = 0.01: K_opt = 4.64e-3. σ = 0.05: K_opt = 2.93e-2 (valores de la grilla logspace).
+
+### Parte A: PSF ligeramente incorrecta (`test_p2_psf_incorrecta`)
+
+- y se hace siempre con la PSF correcta (σ = 0.01, semilla 0) y se restaura con Wiener usando una PSF distinta. Se usa σ = 0.01 porque con poco ruido el efecto del error en la PSF no queda tapado por el ruido.
+- Perturbaciones (clase 15, deconvolución semi-ciega: muchas veces se conoce la forma de la PSF pero no exacto su centro o su tamaño):
+  - **corrida 1 px**: `np.roll(psf, 1, axis=1)`, el centro queda 1 pixel a la derecha (como un error de centrado).
+  - **ancha × 1.1** y **angosta × 0.9**: la PSF escalada alrededor de su centro con `cv2.getRotationMatrix2D` + `cv2.warpAffine` (interpolación bilineal, clase 7), del mismo tamaño 15 × 15 y normalizada otra vez a suma 1.
+- Se restaura con K = 4.64e-3 (el óptimo con la PSF correcta) y además se repite el barrido de K con cada PSF.
+
+| PSF usada | ‖h_mal − h‖ / ‖h‖ | RMSE con K = 4.64e-3 | K_opt propio | RMSE con K_opt propio |
+|---|---|---|---|---|
+| correcta | 0 | 0.0659 | 4.64e-3 | 0.0659 |
+| corrida 1 px | 0.291 | 0.0771 | 8.58e-3 | 0.0765 |
+| ancha × 1.1 | 0.164 | 0.0684 | 6.31e-3 | 0.0682 |
+| angosta × 0.9 | 0.139 | 0.0677 | 6.31e-3 | 0.0677 |
+
+- Las tres empeoran el RMSE (y = 0.0807 sigue siendo peor). La corrida es la que más (+17 %), la ancha y la angosta ~+3 %.
+- Con la PSF mal el K óptimo sube (6.3e-3 y 8.6e-3): el error del modelo actúa como ruido extra y conviene regularizar más. Pero re-optimizar K casi no arregla nada (0.0771 → 0.0765), el error viene de la PSF.
+- **Corrida 1 px**: a la vista se ve igual de nítida, pero está movida 1 pixel a la izquierda. Al devolverla 1 pixel la diferencia con la restauración correcta es solo 5e-3 (el resto viene de la columna que da la vuelta dentro del 15 × 15 en el `np.roll`). En el mapa de error (`reconstrucciones_psf.png`) los bordes salen con el doble de intensidad. Correr la PSF solo agrega una fase lineal a H (|H| no cambia), por eso no cambia la nitidez sino la posición. Con la PSF sin centrar del todo (7 px, `test_p2_otf`) pasaría lo mismo pero 7 veces más.
+- **Ancha × 1.1**: se deconvoluciona de más; en el zoom aparecen halos/anillos paralelos a los bordes (oscilaciones, sobre todo en el abrigo y el trípode).
+- **Angosta × 0.9**: se deconvoluciona de menos, queda un poco más borrosa que la correcta y con menos halos.
+- La PSF ancha y la angosta tienen error relativo parecido (0.16 y 0.14) y dan RMSE casi igual, pero el tipo de artefacto es distinto (anillos vs borroso).
