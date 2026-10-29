@@ -1,0 +1,11 @@
+sigma = 0.01, RMSE degradada y = 0.0807
+
+psf usada         ||h_mal - h|| / ||h||   RMSE con K = 0.00464   K_opt propio   RMSE con K_opt propio
+correcta          0.000                   0.0659                  4.64e-03       0.0659
+corrida 1 px      0.291                   0.0771                  8.58e-03       0.0765
+ancha x 1.1       0.164                   0.0684                  6.31e-03       0.0682
+angosta x 0.9     0.139                   0.0679                  6.31e-03       0.0677
+
+PSF corrida:
+  max |x_corrida - x_correcta| = 0.2792
+  max |x_corrida movida 1 px - x_correcta| = 5.31e-03

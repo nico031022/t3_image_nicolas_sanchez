@@ -1,0 +1,14 @@
+min |H|^2 = 3.99e-12 (no es 0, con K = 0 no se divide por 0)
+maxima amplificacion 1 / min |H| = 5.01e+05
+
+Filtro inverso (K = 0):
+sigma    RMSE(x_inv, x)   min x_inv     max x_inv     RMSE del termino N/H
+0        3.6e-13          -8.192e-13    1             0
+0.01     42.28            -155.5        172.5         42.28
+0.05     211.4            -777.6        859.5         211.4
+
+Ganancia de Wiener con la H de la PSF:
+K        max |W| en la grilla   1 / (2 raiz(K))
+0.0001   50.00                  50.00
+0.001    15.81                  15.81
+0.01     5.00                   5.00

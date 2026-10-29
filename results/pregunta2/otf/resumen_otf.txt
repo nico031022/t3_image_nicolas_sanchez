@@ -1,0 +1,22 @@
+Imagen: images\profesor\p2\cameraman.jpg, tamano (256, 256), min 0.000, max 1.000
+PSF: tamano (15, 15)
+  suma antes de normalizar: 35.4549
+  suma despues de normalizar: 1.000000
+  maximo: 0.02820 en (fila, col) = (7, 7)
+  centro de masa: (7.002, 7.006)
+  centro usado en psf_a_otf: (7, 7)
+  max |h - h girada 180|: 2.21e-04 (0.78 % del maximo)
+H = fft2 de la psf centrada en (0, 0):
+  H(0, 0) = 1.000000+0.000000j
+  max |H| = 1.000000, min |H| = 2.00e-06
+  min |H|^2 = 3.99e-12
+  max |parte imaginaria de H| = 1.28e-03
+  frecuencias con |H| < 0.1: 93.04 %
+  frecuencias con |H| < 0.01: 78.32 %
+  frecuencias con |H| < 0.001: 47.87 %
+Convolucion con fft vs a mano (np.roll):
+  max |diferencia| = 1.22e-15
+  promedio x = 0.465586, promedio h * x = 0.465586
+PSF sin centrar (sin np.roll):
+  max |sin roll - con roll| = 0.7643
+  max |sin roll - (con roll movida 7 px)| = 5.00e-16

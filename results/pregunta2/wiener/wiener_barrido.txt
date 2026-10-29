@@ -1,0 +1,15 @@
+K: 61 valores entre 1e-07 y 1e+01 (logspace)
+
+sigma = 0.01:
+  RMSE degradada y = 0.0807
+  K_opt = 4.642e-03, RMSE = 0.0659
+  RMSE con K_opt / 100 = 0.3234, con K_opt x 100 = 0.1855
+  1 / SNR = 3.613e-04
+sigma = 0.05:
+  RMSE degradada y = 0.0944
+  K_opt = 2.929e-02, RMSE = 0.0786
+  RMSE con K_opt / 100 = 0.6044, con K_opt x 100 = 0.3974
+  1 / SNR = 9.033e-03
+
+K_opt(0.05) / K_opt(0.01) = 6.3
+(sigma 0.05 / sigma 0.01)^2 = 25.0

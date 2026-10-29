@@ -1,0 +1,16 @@
+Prueba del adjunto con a y b aleatorias:
+  <H a, b>  = -13.5480315249
+  <a, Ht b> = -13.5480315249
+  diferencia relativa = 1.44e-15
+H transpuesta:
+  max |otf(psf girada) - conj(H)| = 2.71e-16
+  max |Ht y - H y| = 8.54e-04 (max |H y| = 0.825)
+
+Corrida de prueba (lambda = 0.00464, tau = 1.0):
+  iteraciones: 1072 (max 2000), tiempo 20.1 s
+  ultimo cambio relativo: 9.98e-07 (tol 1e-06)
+  costo: inicial 55.0780, final 44.1736
+  veces que el costo subio: 0
+  RMSE: inicial (y) 0.0807, final 0.0659
+  RMSE minimo 0.0658 en la iteracion 315
+  RMSE final con calcular_rmse: 0.0659

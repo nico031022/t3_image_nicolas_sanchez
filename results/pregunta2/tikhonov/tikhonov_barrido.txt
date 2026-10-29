@@ -1,0 +1,45 @@
+sigma = 0.01, RMSE degradada y = 0.0807, max_iter = 3000, tol corrida = 1e-07
+
+Barrido de tau (lambda = 0.00464):
+lambda     tau    iter   para por  costo final  RMSE final  RMSE min  en iter  tiempo
+4.64e-03   0.5    2815   tol       44.17        0.06595     0.0658    630      56.7 s
+    limite 2 / (1 + lambda) = 1.9908
+4.64e-03   1.0    1551   tol       44.17        0.06595     0.0658    315      28.6 s
+    limite 2 / (1 + lambda) = 1.9908
+4.64e-03   1.9    886    tol       44.17        0.06595     0.0658    165      18.2 s
+    limite 2 / (1 + lambda) = 1.9908
+4.64e-03   2.05   3000   max_iter  6.574e+149   4.469e+72   0.0679    26       56.3 s
+    limite 2 / (1 + lambda) = 1.9908
+
+Barrido de lambda (tau = 1.0):
+lambda     tau    iter   para por  costo final  RMSE final  RMSE min  en iter  tiempo
+0.00e+00   1.0    3000   max_iter  2.589        0.1403      0.0661    172      54.7 s
+4.64e-04   1.0    3000   max_iter  6.956        0.09692     0.0660    185      52.8 s
+4.64e-03   1.0    1551   tol       44.17        0.06595     0.0658    315      28.6 s
+4.64e-02   1.0    194    tol       396.4        0.07467     0.0747    194      3.7 s
+
+Efecto del criterio de detencion (tau = 1.0):
+  lambda = 0.00e+00:
+    tol = 0.001    para en la iteracion 22     RMSE = 0.0692
+    tol = 0.0001   para en la iteracion 833    RMSE = 0.0774
+    tol = 1e-05    no se cumple en 3000 iteraciones
+    tol = 1e-06    no se cumple en 3000 iteraciones
+    tol = 1e-07    no se cumple en 3000 iteraciones
+  lambda = 4.64e-04:
+    tol = 0.001    para en la iteracion 21     RMSE = 0.0693
+    tol = 0.0001   para en la iteracion 442    RMSE = 0.0678
+    tol = 1e-05    no se cumple en 3000 iteraciones
+    tol = 1e-06    no se cumple en 3000 iteraciones
+    tol = 1e-07    no se cumple en 3000 iteraciones
+  lambda = 4.64e-03:
+    tol = 0.001    para en la iteracion 20     RMSE = 0.0696
+    tol = 0.0001   para en la iteracion 161    RMSE = 0.0660
+    tol = 1e-05    para en la iteracion 598    RMSE = 0.0659
+    tol = 1e-06    para en la iteracion 1072   RMSE = 0.0659
+    tol = 1e-07    para en la iteracion 1551   RMSE = 0.0659
+  lambda = 4.64e-02:
+    tol = 0.001    para en la iteracion 12     RMSE = 0.0760
+    tol = 0.0001   para en la iteracion 49     RMSE = 0.0747
+    tol = 1e-05    para en la iteracion 97     RMSE = 0.0747
+    tol = 1e-06    para en la iteracion 146    RMSE = 0.0747
+    tol = 1e-07    para en la iteracion 194    RMSE = 0.0747

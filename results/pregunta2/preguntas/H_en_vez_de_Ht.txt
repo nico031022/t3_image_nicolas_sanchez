@@ -1,0 +1,22 @@
+sigma = 0.01, lambda = 0.00464, tau = 1.0, max_iter = 1000, tol = 1e-07
+y se hace con la misma psf que se usa para restaurar, lo unico malo es H en vez de Ht
+
+psf original: max |h - h girada| / max h = 0.78 %
+  max |1 - tau (|H|^2 + lambda)| (con Ht) = 0.9954
+  max |1 - tau (H^2 + lambda)|   (con H)  = 0.9954
+  frecuencias con factor > 1 usando H: 0 de 65536
+  min de la parte real de H^2: -0.0000
+  punto fijo con H, H Y / (H^2 + lambda): RMSE = 0.06595
+  con Ht: 1000 it., RMSE final = 0.0659, el costo subio 0 veces
+  con H:  1000 it., RMSE final = 0.06594, el costo subio 0 veces
+  max |x con H - x con Ht| = 0.00619
+
+psf corrida 1 px: max |h - h girada| / max h = 52.55 %
+  max |1 - tau (|H|^2 + lambda)| (con Ht) = 0.9954
+  max |1 - tau (H^2 + lambda)|   (con H)  = 0.9969
+  frecuencias con factor > 1 usando H: 0 de 65536
+  min de la parte real de H^2: -0.0015
+  punto fijo con H, H Y / (H^2 + lambda): RMSE = 0.07001
+  con Ht: 1000 it., RMSE final = 0.0660, el costo subio 0 veces
+  con H:  1000 it., RMSE final = 0.07, el costo subio 211 veces
+  max |x con H - x con Ht| = 0.1431

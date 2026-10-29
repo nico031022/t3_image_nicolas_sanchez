@@ -1,0 +1,27 @@
+tau = 1.9, tol = 1e-09, max_iter = 3000
+
+sigma = 0.01, K_opt = 0.00464, RMSE degradada y = 0.0807
+  lambda = K = 0.00464:
+    cerrada (Wiener K):           RMSE = 0.06595
+    iterativa convergida:         RMSE = 0.06595 (1393 iteraciones)
+    iterativa vs cerrada:         RMSE = 5.71e-08, max |dif| = 2.46e-07
+    iterativa mejor (min RMSE):   RMSE = 0.06578 en la iteracion 165
+    mejor vs cerrada:             RMSE = 4.26e-03, max |dif| = 2.11e-02
+  lambda = 0:
+    cerrada (filtro inverso):     RMSE = 42.28
+    iterativa mejor (min RMSE):   RMSE = 0.06606 en la iteracion 91
+    iterativa en la ultima (3000):  RMSE = 0.19799
+    mejor vs cerrada:             RMSE = 42.28
+
+sigma = 0.05, K_opt = 0.0293, RMSE degradada y = 0.0944
+  lambda = K = 0.0293:
+    cerrada (Wiener K):           RMSE = 0.07861
+    iterativa convergida:         RMSE = 0.07861 (393 iteraciones)
+    iterativa vs cerrada:         RMSE = 2.42e-10, max |dif| = 2.87e-10
+    iterativa mejor (min RMSE):   RMSE = 0.07778 en la iteracion 28
+    mejor vs cerrada:             RMSE = 1.13e-02, max |dif| = 5.03e-02
+  lambda = 0:
+    cerrada (filtro inverso):     RMSE = 211.4
+    iterativa mejor (min RMSE):   RMSE = 0.08913 en la iteracion 4
+    iterativa en la ultima (3000):  RMSE = 0.96258
+    mejor vs cerrada:             RMSE = 211.4
