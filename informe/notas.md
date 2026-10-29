@@ -441,3 +441,86 @@
 - Con λ = K_opt, desde tol = 1e-5 el RMSE ya no cambia y achicar tol solo agrega iteraciones (598 → 1551). Con 1e-4 queda en 0.0660, casi igual.
 - Con λ = 0 o λ chico, un tol grande (1e-3) para temprano y da mejor RMSE que dejarlo correr: parar antes funciona como regularización (semi-convergencia). Con tol chico no para nunca y el resultado empeora.
 - tol = 1e-3 es demasiado grande: para a las ~20 iteraciones sin haber convergido (0.0696 con K_opt).
+
+### Comparación con la solución cerrada (`test_p2_comparacion`)
+
+- Solución cerrada de Tikhonov = `wiener(y, H, λ)` (clase 17). Iterativa = `tikhonov_gd` con τ = 1.9 (el τ estable más rápido del barrido), tol = 1e-9 (muy chico, para acercarse lo más posible) y max_iter = 3000.
+- Para medir la distancia a la solución cerrada en cada iteración se le pasa la solución cerrada como `x_real` a `tikhonov_gd`; así la lista de RMSE que devuelve es RMSE(x_k, x_cerrada).
+- "Iterativa mejor" = la iteración con menor RMSE contra x. Para tener esa imagen se corre otra vez con `max_iter` igual a esa iteración (el método es determinista y da la misma imagen).
+- Se hace con los dos niveles de ruido y su K_opt.
+
+| σ | λ | cerrada | iterativa convergida | iterativa vs cerrada | iterativa mejor (iter) |
+|---|---|---|---|---|---|
+| 0.01 | K = 4.64e-3 | 0.06595 | 0.06595 (1393 it.) | RMSE 5.7e-8, máx 2.5e-7 | 0.06578 (165) |
+| 0.01 | 0 | 42.28 (inverso) | no converge, 0.198 en la 3000 | — | 0.06606 (91) |
+| 0.05 | K = 2.93e-2 | 0.07861 | 0.07861 (393 it.) | RMSE 2.4e-10, máx 2.9e-10 | 0.07778 (28) |
+| 0.05 | 0 | 211.4 (inverso) | no converge, 0.963 en la 3000 | — | 0.08913 (4) |
+
+**λ = K**
+- La iterativa converge a la solución cerrada: la diferencia queda en 1e-7 (σ = 0.01) y 1e-10 (σ = 0.05), lo que permite el tol = 1e-9. Son la misma solución.
+- `distancia_a_cerrada.png`: la distancia baja como una recta en escala log. La velocidad la pone la frecuencia más lenta, con factor max(1 − τλ, |1 − τ(1 + λ)|) por iteración:
+  - σ = 0.01: 1 − τλ = 0.9912 (las frecuencias donde H ≈ 0). Por eso necesita 1393 iteraciones.
+  - σ = 0.05: λ es más grande y 1 − τλ = 0.9443, pero con τ = 1.9 la frecuencia (0, 0) tiene |1 − 1.9 · 1.0293| = 0.9557, que es más lenta. La pendiente medida al final es 0.9556. Con τ cerca del límite la frecuencia cero oscila y se vuelve la más lenta.
+- La mejor iteración es un poco mejor que la cerrada (0.06578 vs 0.06595 y 0.07778 vs 0.07861), y está a 4e-3 / 1e-2 de ella (RMSE). Como dice la clase 17, la iterativa parada antes puede dar mejor resultado que la cerrada: parar antes suma un poco de regularización extra (las frecuencias con H chico todavía no llegan a su valor final).
+
+**λ = 0**
+- La solución cerrada es el filtro inverso: RMSE 42.3 y 211, inservible.
+- La iterativa nunca converge (es la semi-convergencia de la clase 17), pero parada en el momento justo da 0.0661 (iteración 91, σ = 0.01) y 0.0891 (iteración 4, σ = 0.05). Con σ = 0.01 queda casi igual que Wiener óptimo; con σ = 0.05 hay que parar muy temprano y queda peor que Wiener (0.0891 vs 0.0786) y con más ruido.
+- Si se deja correr, empeora (0.198 y 0.963 en la 3000) y se acerca de a poco al inverso.
+- La iteración óptima depende del ruido (91 vs 4) y en la práctica no se conoce x para elegirla: el λ explícito es más fácil de usar que adivinar cuándo parar.
+
+**Mejores reconstrucciones** (`mejores_reconstrucciones.png`)
+- Con σ = 0.01: Wiener K_opt, Tikhonov λ = K_opt (iter 165) y Tikhonov λ = 0 (iter 91) se ven casi iguales; en el zoom las tres recuperan el borde del pelo, la cara y la cámara, y en el cielo queda una textura suave de manchas.
+- Con σ = 0.05: Wiener y Tikhonov λ = K_opt se ven parecidos (más suaves). Tikhonov λ = 0 parado en la iteración 4 todavía tiene bastante ruido granulado (casi no se filtró) y se ve menos nítido.
+
+**Por qué la cerrada de Tikhonov es Wiener (pregunta guiada)**
+- Igualando el gradiente a 0: Hᵀ(Hx − y) + λx = 0 → (HᵀH + λI) x = Hᵀ y → x = (HᵀH + λI)⁻¹ Hᵀ y.
+- Con convolución circular la DFT diagonaliza H: H x ↔ H(u, v) X(u, v), Hᵀ y ↔ H*(u, v) Y(u, v) y HᵀH x ↔ |H(u, v)|² X(u, v). Entonces en cada frecuencia (|H|² + λ) X = H* Y, o sea X = H* Y / (|H|² + λ): el Wiener simplificado con K = λ (también en la cápsula, sección 6, con la verificación matriz vs Fourier).
+- Qué impide que coincidan exactamente:
+  - El número finito de iteraciones: el error baja como (factor)^k, depende de τ, λ, tol y max_iter. Con τ = 1 y tol = 1e-6 (la corrida del check, 1072 iteraciones) la diferencia con la cerrada es RMSE 1.1e-4 (máx 4.8e-4), contra 5.7e-8 con tol = 1e-9.
+  - Errores de redondeo de las FFT (~1e-15 por operación, se acumulan en miles de iteraciones).
+  - Con λ = 0 (o muy chico) el problema está mal condicionado (|H|² hasta 4e-12): la iterativa no llega a la cerrada en un número razonable de iteraciones y la cerrada amplifica el ruido.
+  - Si H y Hᵀ no usaran el mismo modelo de borde que la fórmula de Fourier (por ejemplo, padding de ceros o reflejo en la iterativa) ya no serían la misma matriz diagonalizada por la DFT y las soluciones no coincidirían. Aquí todo usa convolución circular, por eso coinciden hasta 1e-7 / 1e-10.
+  - Si se usara H en vez de Hᵀ en el gradiente, con esta PSF un poco asimétrica se resolvería otro problema (diferencia 8.5e-4 en Hᵀy).
+
+### H en vez de Hᵀ con una PSF no simétrica (`test_p2_preguntas`)
+
+- Para ver qué cambia si la PSF no es simétrica, se copia el loop de `tikhonov_gd` en el script y se cambia solo `aplicar_Ht(residuo, H)` por `aplicar_H(residuo, H)` (`tikhonov_gd_con_H`, solo en el experimento, `src` no se toca).
+- Dos PSF: la original (asimetría 0.78 %) y la corrida 1 px de `test_p2_psf_incorrecta` (asimetría 52.6 %). En cada caso y se hace con esa misma PSF, así lo único malo es usar H en vez de Hᵀ. σ = 0.01, λ = 4.64e-3, τ = 1, max_iter = 1000, tol = 1e-7.
+- En Fourier, con H en vez de H* cada frecuencia se multiplica por 1 − τ(H² + λ) en vez de 1 − τ(|H|² + λ), y el punto fijo es X = H Y / (H² + λ) en vez de H* Y / (|H|² + λ). Si la PSF es simétrica H es real, H² = |H|² y da lo mismo.
+
+| PSF | asimetría | max \|1 − τ(H² + λ)\| | punto fijo con H | final con Hᵀ | final con H | costo sube (con H) | max \|dif\| |
+|---|---|---|---|---|---|---|---|
+| original | 0.78 % | 0.9954 | 0.06595 | 0.0659 | 0.0659 | 0 veces | 0.006 |
+| corrida 1 px | 52.6 % | 0.9969 | 0.07001 | 0.0660 | 0.0700 | 211 veces | 0.143 |
+
+- Con la PSF original casi no se nota (diferencia 0.006), porque H es casi real.
+- Con la PSF corrida, H = |H| e^{−j2πu} tiene fase y H² también; la parte real de H² llega a ser negativa (mín −0.0015) en algunas frecuencias. Aquí no diverge (ningún factor pasa de 1, porque esas frecuencias tienen |H| chico), pero converge a otra solución: RMSE 0.070 contra 0.066 con Hᵀ, diferencia de hasta 0.14. Además el costo J sube 211 veces: con H el "gradiente" ya no es el gradiente de J y no hay garantía de que baje.
+- Si la parte real de H² fuera más negativa (|H| grande con fase cercana a ±90°), el factor pasaría de 1 y el método divergería.
+
+## Preguntas guiadas P2 (resumen)
+
+Las explicaciones largas están en las secciones de arriba; aquí va la respuesta corta con dónde está en el código.
+
+**P1. ¿Por qué Y / H puede ser inestable y por qué K lo evita?**
+- Y / H = X + N / H. H es pasa bajos: |H| < 0.01 en el 78 % de las frecuencias y llega a 2e-6, mientras el ruido es plano. N / H amplifica el ruido hasta 5e5 veces (`test_p2_wiener_inversa`): RMSE 42.3 (σ = 0.01) y 211 (σ = 0.05), y sin ruido 5e-13.
+- Con K: |W| = |H| / (|H|² + K) ≤ 1 / (2√K). Donde |H|² ≫ K, W ≈ 1/H; donde |H|² ≪ K, W ≈ |H| / K → 0 y la frecuencia se apaga en vez de amplificarse.
+
+**P2. ¿Cómo se pasa de la PSF a H(u, v)?**
+- `psf_a_otf` (`src/pregunta2.py`): (1) se pone la PSF de 15 × 15 en la esquina de una matriz de ceros de 256 × 256 (ajuste de tamaño, línea 27); (2) `np.roll` de (−7, −7) para llevar el centro (7, 7) al pixel (0, 0) (centrado, línea 30); (3) `fft2` sin `fftshift`, mismo orden que `fft2(x)`.
+- Si se omite el `np.roll`, la imagen sale movida 7 pixeles (|H| es igual, cambia la fase) y la diferencia con la correcta llega a 0.76 (`test_p2_otf`). Un error de 1 pixel ya sube el RMSE de Wiener 17 % (`test_p2_psf_incorrecta`). Si se usara `fftshift` en H sin hacerlo en Y, H quedaría desordenada respecto a Y y la restauración no tendría sentido.
+
+**P3. Gradiente de Tikhonov**
+- ∇J = Hᵀ(Hx − y) + λx. En `tikhonov_gd`: `grad_fidelidad = aplicar_Ht(residuo, H)` con `residuo = aplicar_H(x, H) - y` (fidelidad, línea 154) y `grad_regularizacion = lam * x` (regularización, línea 155). Actualización: `x_nuevo = x - tau * gradiente`.
+
+**P4. ¿Cómo se implementa Hᵀ?**
+- `aplicar_Ht` multiplica por conj(H) en Fourier: es la correlación con h, o la convolución con la PSF girada 180° (`otf(psf girada)` = conj(H) con diferencia 2.7e-16). Prueba del adjunto ⟨Ha, b⟩ = ⟨a, Hᵀb⟩ con error ~1e-15 (`test_p2_tikhonov_check`).
+- Si la PSF fuera simétrica, H sería real y Hᵀ = H. Esta PSF es casi simétrica (0.78 %), Hᵀy y Hy difieren 8.5e-4. Con una PSF claramente no simétrica, usar H en vez de Hᵀ lleva a otra solución (0.070 vs 0.066) y el costo deja de bajar siempre (sección anterior).
+
+**P5. Criterio de detención**
+- Cantidad: ‖x_{k+1} − x_k‖ / ‖x_k‖ (clase 17), entre la iteración nueva y la anterior. Se calcula en `tikhonov_gd` después de cada actualización (línea 164) y la decisión es `if cambio < tol: break` (línea 179); si no, para en `max_iter`. También para si el costo no es finito.
+- Efecto (`test_p2_tikhonov_barrido`): con λ = K_opt, tol ≤ 1e-5 ya da el resultado final (0.0659) y achicarlo solo suma iteraciones; con λ = 0 un tol grande para antes y da mejor RMSE (semi-convergencia).
+
+**P6. Solución cerrada = Wiener cuando λ = K**
+- ∇J = 0 → (HᵀH + λI)x = Hᵀy. La DFT diagonaliza la convolución circular: (|H|² + λ) X = H* Y → X = H* Y / (|H|² + λ), el Wiener simplificado con K = λ.
+- Numéricamente (`test_p2_comparacion`): la iterativa llega a 5.7e-8 (σ = 0.01) y 2.4e-10 (σ = 0.05) de la cerrada. Lo que impide coincidir exacto: número finito de iteraciones (depende de τ, λ, tol y max_iter; con tol = 1e-6 queda a 1e-4), redondeo de las FFT, mal condicionamiento con λ chico o 0, y que H y Hᵀ tienen que usar el mismo borde (circular) que la fórmula de Fourier.
