@@ -86,4 +86,58 @@ La imagen es grande (2856 × 4290), así que algunos scripts se demoran: la mayo
 
 ## P2
 
-Pendiente.
+La implementación está en `src/pregunta2.py`. Las funciones principales son:
+
+- `cargar_psf`: lee la PSF y la divide por su suma para que sume 1.
+- `psf_a_otf`: arma H a partir de la PSF. La pone en una imagen de ceros del tamaño de la imagen, mueve su centro al pixel (0, 0) con `np.roll` y hace la FFT.
+- `aplicar_H` y `aplicar_Ht`: aplican H y Hᵀ en frecuencia (multiplicar por H y por su conjugado). Es convolución circular.
+- `degradar`: genera la observación y = h * x + ruido gaussiano con una semilla fija.
+- `wiener`: el filtro de Wiener simplificado H* Y / (|H|² + K). Con K = 0 es el filtro inverso.
+- `tikhonov_gd`: Tikhonov por descenso de gradiente. Se le da λ, τ, el número máximo de iteraciones y el tol del criterio de detención, y guarda por iteración el costo, el RMSE y el cambio relativo.
+
+En toda la pregunta se usa convolución circular, ruido con σ = 0.01 y σ = 0.05 (semilla 0) y los K óptimos de Wiener que salieron en el barrido: 4.64e-3 para σ = 0.01 y 2.93e-2 para σ = 0.05.
+
+Igual que en la P1, los scripts están en el orden en que se hicieron:
+
+1. Ver la PSF y H, revisar el modelo de degradación y elegir los niveles de ruido:
+
+```bash
+python -m experiments.test_p2_otf
+python -m experiments.test_p2_degradacion
+```
+
+2. Filtro inverso y Wiener (barrido de K):
+
+```bash
+python -m experiments.test_p2_wiener_inversa
+python -m experiments.test_p2_wiener_barrido
+```
+
+3. Wiener con una PSF un poco incorrecta:
+
+```bash
+python -m experiments.test_p2_psf_incorrecta
+```
+
+4. Revisar Tikhonov iterativo y probar distintos λ, τ y criterios de detención:
+
+```bash
+python -m experiments.test_p2_tikhonov_check
+python -m experiments.test_p2_tikhonov_barrido
+```
+
+5. Comparar la solución iterativa con la solución cerrada y ver las mejores reconstrucciones:
+
+```bash
+python -m experiments.test_p2_comparacion
+```
+
+6. Números y figuras para las preguntas guiadas:
+
+```bash
+python -m experiments.test_p2_preguntas
+```
+
+Los resultados quedan en `results/pregunta2/`, en una carpeta por script (`otf`, `degradacion`, `inversa`, `wiener`, `psf_incorrecta`, `tikhonov_check`, `tikhonov`, `comparacion` y `preguntas`). Cada carpeta tiene un `.txt` con los números que se imprimen en la terminal.
+
+Los scripts de Wiener tardan unos segundos. Los de Tikhonov iteran miles de veces y se demoran más: `test_p2_tikhonov_barrido` unos 4 a 5 minutos y `test_p2_comparacion` unos 3.
