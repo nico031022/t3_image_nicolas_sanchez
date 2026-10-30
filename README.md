@@ -24,6 +24,7 @@ Todos los comandos de abajo se ejecutan desde esa misma carpeta, usando `python 
   - `p2/psf.png`: PSF h de 15 × 15 (P2).
 - `results/`: figuras y tablas de cada experimento. Cada script guarda sus resultados en una carpeta con su nombre y al volver a ejecutarlo se sobrescriben con los mismos nombres.
 - `informe/notas.md`: notas que fui escribiendo durante la tarea, con lo que se observó en cada experimento y por qué se eligió cada parámetro.
+- `informe/informe_t3.pdf`: informe de la tarea.
 
 ## P1
 
