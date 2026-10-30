@@ -240,7 +240,7 @@
 
 **P6 (un solo notch del par)**
 - H con los agujeros de Bayer y un solo agujero en +0.25 (sin el de −0.25).
-- Parte imaginaria máxima después de la ifft: 1.8e-2, contra 1.2e-15 con el par completo. Como H ya no es simétrico, F · H deja de cumplir F(−u, −v) = conj(F(u, v)) y la imagen sale compleja.
+- Parte imaginaria máxima después de la ifft: 1.8e-2, contra 1.3e-15 con el par completo. Como H ya no es simétrico, F · H deja de cumplir F(−u, −v) = conj(F(u, v)) y la imagen sale compleja.
 - La parte imaginaria tiene rayas verticales cada 4 columnas, es la exponencial que quedó en −0.25.
 - Cielo, std de la mediana por columna: ruidosa 0.00881, par completo 0.00238, un solo notch 0.00356. En el perfil se ve que el patrón de 4 columnas sigue ahí, más chico: de cos θ = (e^{jθ} + e^{−jθ})/2 se sacó una exponencial y la parte real de la que queda es un coseno con la mitad de amplitud.
 
