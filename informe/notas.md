@@ -303,7 +303,7 @@
 
 | σ | RMSE(x̂, x) | min x̂ | max x̂ |
 |---|---|---|---|
-| 0 | 4.8e-13 | ~0 | 1 |
+| 0 | 3.6e-13 | ~0 | 1 |
 | 0.01 | 42.3 | −155 | 172 |
 | 0.05 | 211 | −778 | 860 |
 
@@ -361,7 +361,7 @@
 | ancha × 1.1 | 0.164 | 0.0684 | 6.31e-3 | 0.0682 |
 | angosta × 0.9 | 0.139 | 0.0679 | 6.31e-3 | 0.0677 |
 
-- Las tres empeoran el RMSE (y = 0.0807 sigue siendo peor). La corrida es la que más (+17 %), la ancha y la angosta ~+3 %.
+- Las tres empeoran el RMSE (y = 0.0807 sigue siendo peor). La corrida es la que más (+17 %), la ancha +3.8 % y la angosta +3.0 %.
 - Con la PSF mal el K óptimo sube (6.3e-3 y 8.6e-3): el error del modelo actúa como ruido extra y conviene regularizar más. Pero re-optimizar K casi no arregla nada (0.0771 → 0.0765), el error viene de la PSF.
 - **Corrida 1 px**: a la vista se ve igual de nítida, pero está movida 1 pixel a la izquierda. Al devolverla 1 pixel la diferencia con la restauración correcta es solo 5e-3 (el resto viene de la columna que da la vuelta dentro del 15 × 15 en el `np.roll`). En el mapa de error (`reconstrucciones_psf.png`) los bordes salen con el doble de intensidad. Correr la PSF solo agrega una fase lineal a H (|H| no cambia), por eso no cambia la nitidez sino la posición. Con la PSF sin centrar del todo (7 px, `test_p2_otf`) pasaría lo mismo pero 7 veces más.
 - **Ancha × 1.1**: se deconvoluciona de más; en el zoom aparecen halos/anillos paralelos a los bordes (oscilaciones, sobre todo en el abrigo y el trípode).
@@ -381,11 +381,11 @@
 
 **Revisiones**
 - Adjunto: con a y b aleatorias, ⟨Ha, b⟩ = ⟨a, Hᵀb⟩ con diferencia relativa ~1e-15.
-- `psf_a_otf` de la PSF girada 180° da conj(H) (diferencia 2.8e-16): Hᵀ es la convolución con la PSF girada (correlación con h).
+- `psf_a_otf` de la PSF girada 180° da conj(H) (diferencia 2.7e-16): Hᵀ es la convolución con la PSF girada (correlación con h).
 - Como la PSF no es simétrica, Hᵀy y Hy no son iguales: diferencia máxima 8.5e-4 (con valores de hasta 0.83). Es poca porque la asimetría es chica (0.78 %), pero si se usara H en vez de Hᵀ el gradiente no sería el de J.
 
 **Corrida de prueba** (σ = 0.01, λ = 4.64e-3 = K_opt de Wiener, τ = 1, max_iter = 2000, tol = 1e-6; valores de prueba)
-- Para en la iteración 1072 por el criterio (cambio 9.98e-7), 6 s.
+- Para en la iteración 1072 por el criterio (cambio 9.98e-7), ~20 s.
 - El costo baja en todas las iteraciones (nunca sube): 55.08 → 44.17.
 - RMSE: 0.0807 (y) → 0.0659 al final. El mínimo es 0.0658 en la iteración 315 y después sube un poquito.
 - El cambio relativo baja como una recta en escala log: de 1e-4 a 1e-6 en ~870 iteraciones, o sea ×0.9947 por iteración. Es casi 1 − τλ = 0.9954, el factor de las frecuencias donde H ≈ 0. Esas frecuencias son las que más demoran en converger.
@@ -503,7 +503,7 @@
 Las explicaciones largas están en las secciones de arriba; aquí va la respuesta corta con dónde está en el código.
 
 **P1. ¿Por qué Y / H puede ser inestable y por qué K lo evita?**
-- Y / H = X + N / H. H es pasa bajos: |H| < 0.01 en el 78 % de las frecuencias y llega a 2e-6, mientras el ruido es plano. N / H amplifica el ruido hasta 5e5 veces (`test_p2_wiener_inversa`): RMSE 42.3 (σ = 0.01) y 211 (σ = 0.05), y sin ruido 5e-13.
+- Y / H = X + N / H. H es pasa bajos: |H| < 0.01 en el 78 % de las frecuencias y llega a 2e-6, mientras el ruido es plano. N / H amplifica el ruido hasta 5e5 veces (`test_p2_wiener_inversa`): RMSE 42.3 (σ = 0.01) y 211 (σ = 0.05), y sin ruido 3.6e-13.
 - Con K: |W| = |H| / (|H|² + K) ≤ 1 / (2√K). Donde |H|² ≫ K, W ≈ 1/H; donde |H|² ≪ K, W ≈ |H| / K → 0 y la frecuencia se apaga en vez de amplificarse.
 
 **P2. ¿Cómo se pasa de la PSF a H(u, v)?**
